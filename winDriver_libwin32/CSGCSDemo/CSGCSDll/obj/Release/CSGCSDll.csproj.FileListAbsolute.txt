@@ -1,0 +1,5 @@
+D:\Git\code\SPDriver\SP5.1\CSGCSDemo\CSGCSDll\bin\Release\CSGCSDll.dll
+D:\Git\code\SPDriver\SP5.1\CSGCSDemo\CSGCSDll\bin\Release\CSGCSDll.pdb
+D:\Git\code\SPDriver\SP5.1\CSGCSDemo\CSGCSDll\obj\Release\CSGCSDll.dll
+D:\Git\code\SPDriver\SP5.1\CSGCSDemo\CSGCSDll\obj\Release\CSGCSDll.pdb
+D:\Git\code\SPDriver\SP5.1\CSGCSDemo\CSGCSDll\obj\Release\CSGCSDll.csprojResolveAssemblyReference.cache

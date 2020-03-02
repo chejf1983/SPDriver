@@ -1,0 +1,40 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: SpectraArsenal - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\Users\chejf\AppData\Local\Temp\RSPB3E6.tmp" with contents
+[
+/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SPECTRAARSENAL_EXPORTS" /FR"Release/" /Fo"Release/" /Fd"Release/" /FD /c 
+"D:\Git\code\SPDriver\SP5.2\winDriver_libusb\SpectraArsenalForGCS_V5.02\SpectraArsenal.cpp"
+]
+Creating command line "cl.exe @C:\Users\chejf\AppData\Local\Temp\RSPB3E6.tmp" 
+Creating temporary file "C:\Users\chejf\AppData\Local\Temp\RSPB3F7.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib libusb-1.0.lib /nologo /dll /incremental:no /pdb:"Release/SpectraArsenal.pdb" /machine:I386 /out:"Release/SpectraArsenal.dll" /implib:"Release/SpectraArsenal.lib" 
+.\Release\Com_Driver.obj
+.\Release\MIGP.obj
+.\Release\SpectraArsenal.obj
+.\Release\StdAfx.obj
+.\Release\USB_Driver.obj
+]
+Creating command line "link.exe @C:\Users\chejf\AppData\Local\Temp\RSPB3F7.tmp"
+<h3>Output Window</h3>
+Compiling...
+SpectraArsenal.cpp
+Linking...
+   Creating library Release/SpectraArsenal.lib and object Release/SpectraArsenal.exp
+Creating command line "bscmake.exe /nologo /o"Release/SpectraArsenal.bsc"  .\Release\Com_Driver.sbr .\Release\MIGP.sbr .\Release\SpectraArsenal.sbr .\Release\StdAfx.sbr .\Release\USB_Driver.sbr"
+Creating browse info file...
+<h3>Output Window</h3>
+
+
+
+<h3>Results</h3>
+SpectraArsenal.dll - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>
