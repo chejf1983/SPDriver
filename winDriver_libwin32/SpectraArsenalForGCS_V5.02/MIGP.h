@@ -65,7 +65,7 @@
 #define ASYN_SCAN_INTEGRAL          0x01
 #define ASYN_SCAN_SAMPLE            0x02
 
-
+#define CHL_NUM 64
 
 typedef enum
 {
@@ -115,7 +115,7 @@ typedef struct
 {
 	char cTriggerMode;
 	int iIntegrationTime;
-	int iChannelIntegrationTime[16];
+	int iChannelIntegrationTime[CHL_NUM];
 	int iAverageTimes;
 	int iTriggerDelay;
 	

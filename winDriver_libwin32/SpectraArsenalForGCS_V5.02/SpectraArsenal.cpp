@@ -838,7 +838,7 @@ int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec)
 		return SA_API_FAIL;
 	}
 
-	for(i = 0; i < 16; i++)
+	for(i = 0; i < CHL_NUM; i++)
 	{
 		if(usec[i] < apCommParaST[spectrometerIndex]->stSpectrometerPara.iMinIntegrationTimeUS ||
 		   usec[i] > apCommParaST[spectrometerIndex]->stSpectrometerPara.iMaxIntegrationTimeUS)
@@ -847,7 +847,7 @@ int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec)
 		}
 	}
 
-	for(i = 0; i < 16; i++)
+	for(i = 0; i < CHL_NUM; i++)
 	{
 		ulTemp = (unsigned long)(usec[i]);
 		bTemp[0 + (i * 4)] = (BYTE)(ulTemp >> 24 & 0x000000ff);
@@ -1521,7 +1521,7 @@ int SA_GetMultiChannelSpectum(int spectrometerIndex, double *pdSpectumData, int 
 		return SA_API_FAIL;
 	}
 
-	if(iChannelNum > 15)
+	if(iChannelNum >= CHL_NUM)
 	{	
 		return SA_API_FAIL;
 	}
