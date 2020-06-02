@@ -34,7 +34,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     return TRUE;
 }
 
-const char acAPIVersion[] = "V5.02";
+const char acAPIVersion[] = "V5.03";
 
 const char acComName[32][14] = 
 {
@@ -104,6 +104,14 @@ char* SA_GetAPIVersion(void)
 {
 	return (char *)acAPIVersion;
 }
+
+
+
+/****************************************************************************************/
+/****************************************************************************************/
+/***************************** 光谱仪初始化操作接口**********************************/
+/****************************************************************************************/
+/****************************************************************************************/
 
 BOOL SA_SearchSpectrometers(int CommIndex)
 {
@@ -826,6 +834,14 @@ void SA_CloseSpectrometers(void)
 	}
 }
 
+
+
+/****************************************************************************************/
+/****************************************************************************************/
+/***************************** 光谱仪参数设置接口****************************************/
+/****************************************************************************************/
+/****************************************************************************************/
+
 int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec)
 {
 	BYTE bTemp[64];
@@ -987,6 +1003,10 @@ int SA_SetAverageTimes(int spectrometerIndex, int AverageTimes)
 		 	 bTemp[0] = 0x02;
 			 apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode = SOFTWARE_ASYNCHRONOUS;
 			 break;
+		case CACHE_ASYNCHRONOUS:
+		 	 bTemp[0] = 0x03;
+			 apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode = CACHE_ASYNCHRONOUS;
+			 break;
 		 case EXINT_RISING_EDGE:
 			 bTemp[0] = 0x04;
 			 break;
@@ -1017,6 +1037,13 @@ int SA_SetAverageTimes(int spectrometerIndex, int AverageTimes)
 	 return SA_API_SUCCESS;
 
  }
+
+ /****************************************************************************************/
+/****************************************************************************************/
+/***************************** 光谱仪波长操作接口****************************************/
+/****************************************************************************************/
+/****************************************************************************************/
+ 
 int SA_GetWavelengthCalibrationCoefficients (int spectrometerIndex, double * WavelengthCalibration)
 {
 	if(spectrometerIndex > g_iCommIndex)
@@ -1198,6 +1225,114 @@ int SA_GetWavelength(int spectrometerIndex, double *pdWavelengthData, int *pSpec
 	return SA_API_SUCCESS;
 }
 
+/****************************************************************************************/
+/****************************************************************************************/
+/***************************** 缓冲异步触发相关操作接口**********************************/
+/****************************************************************************************/
+/****************************************************************************************/
+
+int SA_ScanStartCacheAsyncTrigger(int spectrometerIndex, int iCacheChannelNum)
+{
+	BYTE bTemp;
+	
+	if(spectrometerIndex > g_iCommIndex)
+	{	
+		return SA_API_FAIL;
+	}
+
+	if(iCacheChannelNum > 7)
+	{	
+		return SA_API_FAIL;
+	}
+
+	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != CACHE_ASYNCHRONOUS)
+	{
+		bTemp = 0x03;
+		if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], VPA, 0x0000, 1, &bTemp, MIGP_ACK_RX_ENABLE) == FALSE)
+		{
+			return SA_API_FAIL;
+		}
+
+		apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode = CACHE_ASYNCHRONOUS;
+	}
+
+	bTemp = ASYN_SCAN_CH1_INTEGRAL + iCacheChannelNum;
+	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], VPA, VPA_ASYN_SCAN_ADDR, 1, &bTemp, MIGP_ACK_RX_ENABLE) == FALSE)
+	{
+		return SA_API_FAIL;
+	}
+
+	return SA_API_SUCCESS;
+
+}
+
+
+int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber, int iCacheChannelNum)
+{
+	BYTE *pbTemp;
+	int i = 0;
+	int iTimeOut;
+	//HANDLE CommDev;
+
+		
+	if(spectrometerIndex > g_iCommIndex)
+	{	
+		
+		return SA_API_FAIL;
+	}
+
+	if(iCacheChannelNum > 7)
+	{	
+		return SA_API_FAIL;
+	}
+
+	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != CACHE_ASYNCHRONOUS)
+	{
+		return SA_API_FAIL;
+	}
+		
+	iTimeOut = (int)(apCommParaST[spectrometerIndex]->stSpectrometerPara.iChannelIntegrationTime[iCacheChannelNum] / 1000) + 5;
+
+	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iAverageTimes <= 0)
+	{
+		apCommParaST[spectrometerIndex]->stSpectrometerPara.iAverageTimes = 1;
+	}
+
+	if(apCommParaST[spectrometerIndex]->enCommType == USB_WINLIB)
+	{
+		iTimeOut = iTimeOut * apCommParaST[spectrometerIndex]->stSpectrometerPara.iAverageTimes + 50;
+	}
+	else
+	{
+	
+		iTimeOut = iTimeOut * apCommParaST[spectrometerIndex]->stSpectrometerPara.iAverageTimes + 500;
+	}
+
+
+	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], MDA, iCacheChannelNum, (apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber * 2), &pbTemp, iTimeOut) == FALSE)
+	{
+		return SA_API_FAIL;
+	}
+
+	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
+	for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+	{
+		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+	}
+
+
+
+	
+	return SA_API_SUCCESS;
+}
+
+
+/****************************************************************************************/
+/****************************************************************************************/
+/***************************** 软件异步触发相关操作接口**********************************/
+/****************************************************************************************/
+/****************************************************************************************/
+
 int SA_ScanStartAsyncSoftTrigger(int spectrometerIndex)
 {
 	BYTE bTemp;
@@ -1248,7 +1383,7 @@ int SA_ScanStartMultiChannelAsyncSoftTrigger(int spectrometerIndex, int iChannel
 		apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode = SOFTWARE_ASYNCHRONOUS;
 	}
 
-	bTemp = ASYN_SCAN_INTEGRAL;
+	bTemp = ASYN_SCAN_CH1_INTEGRAL + iChannelNum;
 	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], VPA, VPA_ASYN_SCAN_ADDR, 1, &bTemp, MIGP_ACK_RX_ENABLE) == FALSE)
 	{
 		return SA_API_FAIL;
@@ -1278,7 +1413,7 @@ int SA_GetStateAsyncSoftTrigger(int spectrometerIndex, int *pState)
 
 }
 
-
+#if 0
 void SA_AverageProcess(double* datavalue, int datalen, int IntaverageWidth)
 {
 	int i = 0;
@@ -1324,7 +1459,15 @@ void SA_AverageProcess(double* datavalue, int datalen, int IntaverageWidth)
 
 
 }
+#endif
 
+
+
+/************************************************************/
+/************************************************************/
+/*************** 光谱仪获取光谱操作接口 *********************/
+/************************************************************/
+/************************************************************/
 
 int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber)
 {
@@ -1431,6 +1574,12 @@ int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int *pSpectumNum
 	return SA_API_SUCCESS;
 }
 
+/************************************************************/
+/************************************************************/
+/*************** 光谱仪自动积分操作接口 *********************/
+/************************************************************/
+/************************************************************/
+
 int SA_GetSpectumAutoIntegrationTime(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber, int usec)
 {
 	BYTE *pbTemp;
@@ -1496,12 +1645,7 @@ int SA_GetSpectumAutoIntegrationTime(int spectrometerIndex, double *pdSpectumDat
 		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
 	}
 
-	#if 0
-	if(IntaverageWidth > 1 && IntaverageWidth < 100)
-	{
-		SA_AverageProcess(pdSpectumData, apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber, IntaverageWidth);
-	}
-	#endif
+
 	
 	return SA_API_SUCCESS;
 }
@@ -1581,50 +1725,6 @@ int SA_GetSpectumHWTrigger(int spectrometerIndex, double *pdSpectumData, int *pS
 //		printf_debug("SA_GetSpectumForHWTrigger FAIL");
 		return SA_API_FAIL;
 	}
-#if 0	
-	switch(TriggerMode)
-	{
-		case EXINT_RISING_EDGE:
-			bTemp[0] = 0x04;
-			break;
-		case EXINT_FALLING_EDGE:
-			bTemp[0] = 0x05;
-			break;
-		case EXINT_HIGH_LEVEL:
-			bTemp[0] = 0x08;
-			break;
-		case EXINT_LOW_LEVEL:
-			bTemp[0] = 0x09;
-			break;
-		default:
-			return SA_API_FAIL;
-	}
-
-	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], VPA, 0x0000, 1, bTemp, MIGP_ACK_RX_ENABLE) == FALSE)
-	{
-		if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], VPA, 0x0000, 1, bTemp, MIGP_ACK_RX_ENABLE) == FALSE)
-		{
-			if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], VPA, 0x0000, 1, bTemp, MIGP_ACK_RX_ENABLE) == FALSE)
-			{
-				return SA_API_FAIL;
-			}
-		}
-	}
-
-	if(MIGP_RegArea_Read_NoRequest(apCommParaST[spectrometerIndex], MDA, 0x0000, (apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber * 2),
-		&pbTemp, iTimeOut) == FALSE)
-	{
-		if(MIGP_RegArea_Read_NoRequest(apCommParaST[spectrometerIndex], MDA, 0x0000, (apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber * 2),
-		   &pbTemp, iTimeOut) == FALSE)
-		{
-			if(MIGP_RegArea_Read_NoRequest(apCommParaST[spectrometerIndex], MDA, 0x0000, (apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber * 2),
-			   &pbTemp, iTimeOut) == FALSE)
-			{
-				return SA_API_FAIL;
-			}
-		}
-	}
-#endif
 
 	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], MDA, 0x0000, (apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber * 2), &pbTemp, iTimeOut) == FALSE)
 	{
@@ -1644,6 +1744,15 @@ int SA_GetSpectumHWTrigger(int spectrometerIndex, double *pdSpectumData, int *pS
 	
 	return SA_API_SUCCESS;
 }
+
+
+
+/************************************************************/
+/************************************************************/
+/*************** 光谱仪信息获取操作接口 *********************/
+/************************************************************/
+/************************************************************/
+
 
 char * SA_GetSpectrometersName(int spectrometerIndex)
 {
@@ -1741,6 +1850,13 @@ int SA_GetSpectrometerPixelsNumber (int spectrometerIndex)
 		return apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
 	}
 }
+
+/****************************************************************************************/
+/****************************************************************************************/
+/***************************** 非线性定标操作接口****************************************/
+/****************************************************************************************/
+/****************************************************************************************/
+
 
 int SA_NonlinearCalibration(int spectrometerIndex, double * pbSpectum, double * pbNewSpectum, int SpectumNumber)
 {
@@ -2174,88 +2290,6 @@ int SA_GetNonlinearCalibrationPixel(int spectrometerIndex,
 }
 
 
-
-int SA_ReadUserMemory(int spectrometerIndex, int Address, int length, BYTE * UserData)
-{
-	BYTE *pbTemp;
-	int i = 0;
-
-	if(Address + length > 4096)
-	{
-		return SA_API_FAIL;
-	}
-
-	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], NVPA, 0x0400 + Address, length, &pbTemp, 1000) == FALSE)
-	{
-		return SA_API_FAIL;
-	}
-
-	for(i = 0; i < length; i++)
-	{
-		UserData[i] = pbTemp[i + 4];
-	}
-
-	return SA_API_SUCCESS;
-}
-
-int SA_WriteUserMemory(int spectrometerIndex, int Address, int length, BYTE * UserData)
-{
-	int i = 0;
-
-	if(Address + length > 4096)
-	{
-		return SA_API_FAIL;
-	}
-
-	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], NVPA, 0x0400 + Address, length, UserData, MIGP_ACK_RX_ENABLE) == FALSE)
-	{
-		return SA_API_FAIL;
-	}
-
-	return SA_API_SUCCESS;
-}
-
-
-/* 用户存储操作接口 
-typedef enum
-{
-	EIA,
-	NVPA,
-	VPA,
-	MDA,
-	SRA
-}AREA_TYPE;
-*/
-SPECTRAARSENAL_API int SA_ReadMemory(int spectrometerIndex, int MEM, int Address, int length, BYTE * UserData)
-{
-	BYTE *pbTemp;
-	int i = 0;
-
-	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], (AREA_TYPE)MEM, Address, length, &pbTemp, 1000) == FALSE)
-	{
-		return SA_API_FAIL;
-	}
-
-	for(i = 0; i < length; i++)
-	{
-		UserData[i] = pbTemp[i + 4];
-	}
-
-	return SA_API_SUCCESS;
-}
-
-SPECTRAARSENAL_API int SA_WriteMemory(int spectrometerIndex, int MEM, int Address, int length, BYTE * UserData)
-{
-	int i = 0;
-
-	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], (AREA_TYPE)MEM, Address, length, UserData, MIGP_ACK_RX_ENABLE) == FALSE)
-	{
-		return SA_API_FAIL;
-	}
-
-	return SA_API_SUCCESS;
-}
-
 #if INTER
 
 int SA_OpenSpectrometersForInteral(void)
@@ -2379,6 +2413,11 @@ int SA_MIGPReadForInteral(int spectrometerIndex, AREA_TYPE enAreaType,
 
 #endif
 
+/****************************************************************************************/
+/****************************************************************************************/
+/******************************* 脉冲氙灯相关操作接口 ***********************************/
+/****************************************************************************************/
+/****************************************************************************************/
 
 
 int SA_XenonFlashEnable(int spectrometerIndex)
@@ -2452,6 +2491,95 @@ int SA_SetXenonFlashPara(int spectrometerIndex, int iPulseWidth, int IntervalTim
 	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], VPA, 0x0018, 12, bTemp, MIGP_ACK_RX_ENABLE) == FALSE)
 	{
 
+		return SA_API_FAIL;
+	}
+
+	return SA_API_SUCCESS;
+}
+
+
+
+/****************************************************************************************/
+/****************************************************************************************/
+/******************************* 用户存储操作接口 ***************************************/
+/****************************************************************************************/
+/****************************************************************************************/
+
+int SA_ReadUserMemory(int spectrometerIndex, int Address, int length, BYTE * UserData)
+{
+	BYTE *pbTemp;
+	int i = 0;
+
+	if(Address + length > 4096)
+	{
+		return SA_API_FAIL;
+	}
+
+	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], NVPA, 0x0400 + Address, length, &pbTemp, 1000) == FALSE)
+	{
+		return SA_API_FAIL;
+	}
+
+	for(i = 0; i < length; i++)
+	{
+		UserData[i] = pbTemp[i + 4];
+	}
+
+	return SA_API_SUCCESS;
+}
+
+int SA_WriteUserMemory(int spectrometerIndex, int Address, int length, BYTE * UserData)
+{
+	int i = 0;
+
+	if(Address + length > 4096)
+	{
+		return SA_API_FAIL;
+	}
+
+	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], NVPA, 0x0400 + Address, length, UserData, MIGP_ACK_RX_ENABLE) == FALSE)
+	{
+		return SA_API_FAIL;
+	}
+
+	return SA_API_SUCCESS;
+}
+
+
+/* 用户存储操作接口 
+typedef enum
+{
+	EIA,
+	NVPA,
+	VPA,
+	MDA,
+	SRA
+}AREA_TYPE;
+*/
+SPECTRAARSENAL_API int SA_ReadMemory(int spectrometerIndex, int MEM, int Address, int length, BYTE * UserData)
+{
+	BYTE *pbTemp;
+	int i = 0;
+
+	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], (AREA_TYPE)MEM, Address, length, &pbTemp, 1000) == FALSE)
+	{
+		return SA_API_FAIL;
+	}
+
+	for(i = 0; i < length; i++)
+	{
+		UserData[i] = pbTemp[i + 4];
+	}
+
+	return SA_API_SUCCESS;
+}
+
+SPECTRAARSENAL_API int SA_WriteMemory(int spectrometerIndex, int MEM, int Address, int length, BYTE * UserData)
+{
+	int i = 0;
+
+	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], (AREA_TYPE)MEM, Address, length, UserData, MIGP_ACK_RX_ENABLE) == FALSE)
+	{
 		return SA_API_FAIL;
 	}
 

@@ -64,6 +64,7 @@
 #define ASYN_SCAN_IDLE              0x00
 #define ASYN_SCAN_INTEGRAL          0x01
 #define ASYN_SCAN_SAMPLE            0x02
+#define ASYN_SCAN_CH1_INTEGRAL      0x10
 
 #define CHL_NUM 64
 
