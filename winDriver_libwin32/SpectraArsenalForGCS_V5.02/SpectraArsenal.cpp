@@ -842,7 +842,7 @@ void SA_CloseSpectrometers(void)
 /****************************************************************************************/
 /****************************************************************************************/
 
-int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec)
+int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec, int usec_num)
 {
 	BYTE bTemp[64];
 	unsigned long ulTemp = 0;
@@ -865,7 +865,10 @@ int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec)
 
 	for(i = 0; i < CHL_NUM; i++)
 	{
-		ulTemp = (unsigned long)(usec[i]);
+		if(i < usec_num)
+			ulTemp = (unsigned long)(usec[i]);
+		else
+			ulTemp = 0;
 		bTemp[0 + (i * 4)] = (BYTE)(ulTemp >> 24 & 0x000000ff);
 		bTemp[1 + (i * 4)] = (BYTE)(ulTemp >> 16 & 0x000000ff);
 		bTemp[2 + (i * 4)] = (BYTE)(ulTemp >> 8 & 0x000000ff);
