@@ -841,8 +841,7 @@ void SA_CloseSpectrometers(void)
 /***************************** 光谱仪参数设置接口****************************************/
 /****************************************************************************************/
 /****************************************************************************************/
-
-int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec, int usec_num)
+int SA_SetMultiChannelIntegrationTime0 (int spectrometerIndex, int *usec, int usec_num)
 {
 	BYTE bTemp[64];
 	unsigned long ulTemp = 0;
@@ -895,7 +894,10 @@ int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec, int use
 	return SA_API_SUCCESS;
 }
 
-
+int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec)
+{
+	return SA_SetMultiChannelIntegrationTime0(spectrometerIndex, usec, 16);
+}
 
 
 
@@ -2387,7 +2389,6 @@ int SA_MIGPReadForInteral(int spectrometerIndex, AREA_TYPE enAreaType,
 {
 	BYTE *pbTemp;
 	int i = 0;
-	int iTimeOut;
 	//HANDLE CommDev;
 
 		
@@ -2500,8 +2501,32 @@ int SA_SetXenonFlashPara(int spectrometerIndex, int iPulseWidth, int IntervalTim
 	return SA_API_SUCCESS;
 }
 
+int SA_GetXenonFlashPara(int spectrometerIndex, int *iPulseWidth, int *IntervalTime, int *iDelayTime, int *PulseNumber)
+{	
+	BYTE *pbTemp;
+	int i = 0;
+	int iTimeOut = 500;
+	UN_32TYPE un32Temp;
 
+		
+	if(spectrometerIndex > g_iCommIndex)
+	{	
+		printf_debug("SA_GetSpectum FAIL");
+		return SA_API_FAIL;
+	}
 
+	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], VPA, 0x0018, 12, &pbTemp, iTimeOut) == FALSE)
+	{
+		return SA_API_FAIL;
+	}
+
+	*iPulseWidth = ((int)pbTemp[4] << 8) | (int)pbTemp[5];
+	*IntervalTime = ((int)pbTemp[6] << 8) | (int)pbTemp[7];
+	*iDelayTime =	((int)pbTemp[8] << 24) | ((int)pbTemp[9] << 16) | ((int)pbTemp[10] << 8)  | (int)pbTemp[11];
+	*PulseNumber =	((int)pbTemp[12] << 24) | ((int)pbTemp[13] << 16) | ((int)pbTemp[14] << 8) | (int)pbTemp[15];
+
+	return SA_API_SUCCESS;
+}
 /****************************************************************************************/
 /****************************************************************************************/
 /******************************* 用户存储操作接口 ***************************************/
