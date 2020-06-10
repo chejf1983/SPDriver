@@ -1,9 +1,118 @@
-﻿生成启动时间为 2020/6/2 15:51:39。
-     1>项目“D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenal64\SpectraArsenal\SpectraArsenal.vcxproj”在节点 2 上(clean 个目标)。
+﻿生成启动时间为 2020/6/10 20:12:22。
+     1>项目“D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenal64\SpectraArsenal\SpectraArsenal.vcxproj”在节点 2 上(rebuild 个目标)。
      1>_PrepareForClean:
          正在删除文件“x64\Release\SpectraArsenal.lastbuildstate”。
-     1>已完成生成项目“D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenal64\SpectraArsenal\SpectraArsenal.vcxproj”(clean 个目标)的操作。
+       InitializeBuildStatus:
+         正在创建“x64\Release\SpectraArsenal.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+       ClCompile:
+         d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /GL /D WIN32 /D _WINDOWS /D NDEBUG /D _USRDLL /D _WINDLL /D _MBCS /D _AFXDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"StdAfx.h" /Fp"x64\Release\SpectraArsenal.pch" /Fo"x64\Release\\" /Fd"x64\Release\vc100.pdb" /Gd /TP /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /GL /D WIN32 /D _WINDOWS /D NDEBUG /D _USRDLL /D _WINDLL /D _MBCS /D _AFXDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"x64\Release\SpectraArsenal.pch" /Fo"x64\Release\\" /Fd"x64\Release\vc100.pdb" /Gd /TP /errorReport:prompt Com_Driver.cpp MIGP.cpp SpectraArsenal.cpp
+         Com_Driver.cpp
+         MIGP.cpp
+         SpectraArsenal.cpp
+     1>SpectraArsenal.cpp(9): warning C4627: “#include <Windows.h>”: 在查找预编译头使用时跳过
+                 将指令添加到“StdAfx.h”或重新生成预编译头
+     1>SpectraArsenal.cpp(104): warning C4273: “SA_GetAPIVersion”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(60) : 参见“SA_GetAPIVersion”的前一个定义
+     1>SpectraArsenal.cpp(657): warning C4273: “SA_OpenSpectrometers”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(61) : 参见“SA_OpenSpectrometers”的前一个定义
+     1>SpectraArsenal.cpp(716): warning C4273: “SA_OpenSpectrometersForSerial”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(62) : 参见“SA_OpenSpectrometersForSerial”的前一个定义
+     1>SpectraArsenal.cpp(743): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(105) : 参见“strcpy”的声明
+     1>SpectraArsenal.cpp(766): warning C4273: “SA_OpenSpectrometersSimplifyForSerial”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(63) : 参见“SA_OpenSpectrometersSimplifyForSerial”的前一个定义
+     1>SpectraArsenal.cpp(793): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\include\string.h(105) : 参见“strcpy”的声明
+     1>SpectraArsenal.cpp(815): warning C4273: “SA_CloseSpectrometers”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(64) : 参见“SA_CloseSpectrometers”的前一个定义
+     1>SpectraArsenal.cpp(905): warning C4273: “SA_SetIntegrationTime”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(68) : 参见“SA_SetIntegrationTime”的前一个定义
+     1>SpectraArsenal.cpp(950): warning C4273: “SA_SetAverageTimes”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(69) : 参见“SA_SetAverageTimes”的前一个定义
+     1>SpectraArsenal.cpp(988): warning C4273: “SA_SetSpectumTriggerMode”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(67) : 参见“SA_SetSpectumTriggerMode”的前一个定义
+     1>SpectraArsenal.cpp(1053): warning C4273: “SA_GetWavelengthCalibrationCoefficients”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(72) : 参见“SA_GetWavelengthCalibrationCoefficients”的前一个定义
+     1>SpectraArsenal.cpp(1069): warning C4273: “SA_SetWavelengthCalibrationCoefficients”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(73) : 参见“SA_SetWavelengthCalibrationCoefficients”的前一个定义
+     1>SpectraArsenal.cpp(1109): warning C4273: “SA_GetWavelengthCalibrationNewCoefficients”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(75) : 参见“SA_GetWavelengthCalibrationNewCoefficients”的前一个定义
+     1>SpectraArsenal.cpp(1145): warning C4273: “SA_SetWavelengthCalibrationNewCoefficients”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(76) : 参见“SA_SetWavelengthCalibrationNewCoefficients”的前一个定义
+     1>SpectraArsenal.cpp(1191): warning C4273: “SA_GetWavelength”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(74) : 参见“SA_GetWavelength”的前一个定义
+     1>SpectraArsenal.cpp(1240): warning C4273: “SA_ScanStartCacheAsyncTrigger”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(120) : 参见“SA_ScanStartCacheAsyncTrigger”的前一个定义
+     1>SpectraArsenal.cpp(1276): warning C4273: “SA_GetCacheAsyncSpectum”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(121) : 参见“SA_GetCacheAsyncSpectum”的前一个定义
+     1>SpectraArsenal.cpp(1342): warning C4273: “SA_ScanStartAsyncSoftTrigger”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(114) : 参见“SA_ScanStartAsyncSoftTrigger”的前一个定义
+     1>SpectraArsenal.cpp(1372): warning C4273: “SA_ScanStartMultiChannelAsyncSoftTrigger”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(116) : 参见“SA_ScanStartMultiChannelAsyncSoftTrigger”的前一个定义
+     1>SpectraArsenal.cpp(1402): warning C4273: “SA_GetStateAsyncSoftTrigger”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(115) : 参见“SA_GetStateAsyncSoftTrigger”的前一个定义
+     1>SpectraArsenal.cpp(1478): warning C4273: “SA_GetSpectum”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(97) : 参见“SA_GetSpectum”的前一个定义
+     1>SpectraArsenal.cpp(1589): warning C4273: “SA_GetSpectumAutoIntegrationTime”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(110) : 参见“SA_GetSpectumAutoIntegrationTime”的前一个定义
+     1>SpectraArsenal.cpp(1660): warning C4273: “SA_GetMultiChannelSpectum”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(106) : 参见“SA_GetMultiChannelSpectum”的前一个定义
+     1>SpectraArsenal.cpp(1721): warning C4273: “SA_GetSpectumHWTrigger”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(101) : 参见“SA_GetSpectumHWTrigger”的前一个定义
+     1>SpectraArsenal.cpp(1763): warning C4273: “SA_GetSpectrometersName”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(86) : 参见“SA_GetSpectrometersName”的前一个定义
+     1>SpectraArsenal.cpp(1774): warning C4273: “SA_GetMaxIntegrationTime”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(87) : 参见“SA_GetMaxIntegrationTime”的前一个定义
+     1>SpectraArsenal.cpp(1785): warning C4273: “SA_GetMinIntegrationTime”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(88) : 参见“SA_GetMinIntegrationTime”的前一个定义
+     1>SpectraArsenal.cpp(1796): warning C4273: “SA_GetSoftwareVersion”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(89) : 参见“SA_GetSoftwareVersion”的前一个定义
+     1>SpectraArsenal.cpp(1807): warning C4273: “SA_GetHardwareVersion”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(90) : 参见“SA_GetHardwareVersion”的前一个定义
+     1>SpectraArsenal.cpp(1819): warning C4273: “SA_GetSerialNumber”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(91) : 参见“SA_GetSerialNumber”的前一个定义
+     1>SpectraArsenal.cpp(1830): warning C4273: “SA_GetManufacturingDate”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(93) : 参见“SA_GetManufacturingDate”的前一个定义
+     1>SpectraArsenal.cpp(1841): warning C4273: “SA_GetSpectrometerPixelsNumber”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(92) : 参见“SA_GetSpectrometerPixelsNumber”的前一个定义
+     1>SpectraArsenal.cpp(1867): warning C4273: “SA_NonlinearCalibration”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(80) : 参见“SA_NonlinearCalibration”的前一个定义
+     1>SpectraArsenal.cpp(2056): warning C4273: “SA_SetNonlinearCalibrationPixel”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(82) : 参见“SA_SetNonlinearCalibrationPixel”的前一个定义
+     1>SpectraArsenal.cpp(2131): warning C4273: “SA_GetNonlinearCalibrationPixel”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(81) : 参见“SA_GetNonlinearCalibrationPixel”的前一个定义
+     1>SpectraArsenal.cpp(2428): warning C4273: “SA_XenonFlashEnable”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(128) : 参见“SA_XenonFlashEnable”的前一个定义
+     1>SpectraArsenal.cpp(2448): warning C4273: “SA_XenonFlashDisable”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(127) : 参见“SA_XenonFlashDisable”的前一个定义
+     1>SpectraArsenal.cpp(2468): warning C4273: “SA_SetXenonFlashPara”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(126) : 参见“SA_SetXenonFlashPara”的前一个定义
+     1>SpectraArsenal.cpp(2509): warning C4101: “un32Temp”: 未引用的局部变量
+     1>SpectraArsenal.cpp(2537): warning C4273: “SA_ReadUserMemory”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(134) : 参见“SA_ReadUserMemory”的前一个定义
+     1>SpectraArsenal.cpp(2560): warning C4273: “SA_WriteUserMemory”: dll 链接不一致
+                 d:\github\singlebranch\spectral\spdriver\windriver_libwin32\spectraarsenal64\spectraarsenal\SpectraArsenal.h(133) : 参见“SA_WriteUserMemory”的前一个定义
+       ResourceCompile:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /D NDEBUG /D _AFXDLL /l"0x0804" /Ix64\Release\ /nologo /fo"x64\Release\SpectraArsenal.res" SpectraArsenal.rc 
+       Link:
+         d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenal64\x64\Release\SpectraArsenal.dll" /INCREMENTAL:NO /NOLOGO USB_Driver.lib /DEF:".\SpectraArsenal.def" /MANIFEST /ManifestFile:"x64\Release\SpectraArsenal.dll.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenal64\x64\Release\SpectraArsenal.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenal64\x64\Release\SpectraArsenal.lib" /MACHINE:X64 /DLL x64\Release\SpectraArsenal.res
+         x64\Release\Com_Driver.obj
+         x64\Release\MIGP.obj
+         x64\Release\SpectraArsenal.obj
+         x64\Release\stdafx.obj
+            正在创建库 D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenal64\x64\Release\SpectraArsenal.lib 和对象 D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenal64\x64\Release\SpectraArsenal.exp
+         正在生成代码
+         已完成代码的生成
+         SpectraArsenal.vcxproj -> D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenal64\x64\Release\SpectraArsenal.dll
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenal64\x64\Release\SpectraArsenal.dll;#2" /manifest x64\Release\SpectraArsenal.dll.intermediate.manifest "d:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\Include\Manifest\dpiaware.manifest"
+       FinalizeBuildStatus:
+         正在删除文件“x64\Release\SpectraArsenal.unsuccessfulbuild”。
+         正在对“x64\Release\SpectraArsenal.lastbuildstate”执行 Touch 任务。
+     1>已完成生成项目“D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenal64\SpectraArsenal\SpectraArsenal.vcxproj”(rebuild 个目标)的操作。
 
 生成成功。
 
-已用时间 00:00:00.03
+已用时间 00:00:02.68

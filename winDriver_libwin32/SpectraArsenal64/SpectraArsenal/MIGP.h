@@ -66,7 +66,7 @@
 #define ASYN_SCAN_SAMPLE            0x02
 #define ASYN_SCAN_CH1_INTEGRAL      0x10
 
-#define CHL_NUM 64
+#define CHL_NUM 16
 
 typedef enum
 {
