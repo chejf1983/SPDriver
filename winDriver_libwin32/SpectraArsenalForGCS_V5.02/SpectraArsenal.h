@@ -75,12 +75,10 @@ SPECTRAARSENAL_API int SA_GetWavelength(int spectrometerIndex, double *pdWavelen
 SPECTRAARSENAL_API int SA_GetWavelengthCalibrationNewCoefficients (int spectrometerIndex, float * pfWavelengthData, float * pfPixelData);
 SPECTRAARSENAL_API int SA_SetWavelengthCalibrationNewCoefficients (int spectrometerIndex, float * pfWavelengthData, float * pfPixelData);
 
-
 /* 非线性定标操作接口 */
 SPECTRAARSENAL_API int SA_NonlinearCalibration(int spectrometerIndex, double * pbSpectum, double * pbNewSpectum, int SpectumNumber);
 SPECTRAARSENAL_API int SA_GetNonlinearCalibrationPixel(int spectrometerIndex, float *pfNonlinearCalibPixelOrWL, int *piNonlinearCalibCoNumber, float *pfNonlinearCalibAD, float *pfNonlinearCalibCo);
 SPECTRAARSENAL_API int SA_SetNonlinearCalibrationPixel(int spectrometerIndex, float fPixelValue, int ParaNum, float *pfADValue, float *pfCalibrationCo);
-
 
 /* 光谱仪信息获取操作接口 */
 SPECTRAARSENAL_API char * SA_GetSpectrometersName(int spectrometerIndex);
@@ -92,44 +90,34 @@ SPECTRAARSENAL_API char * SA_GetSerialNumber(int spectrometerIndex);
 SPECTRAARSENAL_API int SA_GetSpectrometerPixelsNumber (int spectrometerIndex);
 SPECTRAARSENAL_API char * SA_GetManufacturingDate(int spectrometerIndex);
 
-
 /* 获取光谱数据 */
 SPECTRAARSENAL_API int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber);
 
-
 /* 硬件触发操作接口 */
 SPECTRAARSENAL_API int SA_GetSpectumHWTrigger(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber, int iTimeOut, TRIGGER_MODE TriggerMode);
-
 
 /* 多通道采集相关操作接口 */
 SPECTRAARSENAL_API int SA_SetMultiChannelIntegrationTime0 (int spectrometerIndex, int *usec, int usec_num);
 SPECTRAARSENAL_API int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec);
 SPECTRAARSENAL_API int SA_GetMultiChannelSpectum(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber, int iChannelNum);
 
-
 /* 自动积分时间相关操作接口 */
 SPECTRAARSENAL_API int SA_GetSpectumAutoIntegrationTime(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber, int usec);
-
 
 /* 软件异步触发相关操作接口 */
 SPECTRAARSENAL_API int SA_ScanStartAsyncSoftTrigger(int spectrometerIndex);
 SPECTRAARSENAL_API int SA_GetStateAsyncSoftTrigger(int spectrometerIndex, int *pState);
 SPECTRAARSENAL_API int SA_ScanStartMultiChannelAsyncSoftTrigger(int spectrometerIndex, int iChannelNum);
 
-
 /* 缓冲异步触发相关操作接口 */
 SPECTRAARSENAL_API int SA_ScanStartCacheAsyncTrigger(int spectrometerIndex, int iCacheChannelNum);
 SPECTRAARSENAL_API int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber, int iCacheChannelNum);
-
-
 
 /* 脉冲氙灯相关操作接口 */
 SPECTRAARSENAL_API int SA_SetXenonFlashPara(int spectrometerIndex, int iPulseWidth, int IntervalTime, int iDelayTime, int PulseNumber);
 SPECTRAARSENAL_API int SA_GetXenonFlashPara(int spectrometerIndex, int *iPulseWidth, int *IntervalTime, int *iDelayTime, int *PulseNumber);
 SPECTRAARSENAL_API int SA_XenonFlashDisable(int spectrometerIndex);
 SPECTRAARSENAL_API int SA_XenonFlashEnable(int spectrometerIndex);
-
-
 
 /* 用户存储操作接口 */
 SPECTRAARSENAL_API int SA_WriteUserMemory(int spectrometerIndex, int Address, int length, BYTE * UserData);

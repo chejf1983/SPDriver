@@ -6,13 +6,15 @@
 --------------------Configuration: SpectraArsenal - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\Users\chejf\AppData\Local\Temp\RSPEEF2.tmp" with contents
+Creating temporary file "C:\Users\chejf\AppData\Local\Temp\RSP13E.tmp" with contents
 [
 /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SPECTRAARSENAL_EXPORTS" /FR"Release/" /Fo"Release/" /Fd"Release/" /FD /c 
+"D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenalForGCS_V5.02\Com_Driver.cpp"
+"D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenalForGCS_V5.02\MIGP.cpp"
 "D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenalForGCS_V5.02\SpectraArsenal.cpp"
 ]
-Creating command line "cl.exe @C:\Users\chejf\AppData\Local\Temp\RSPEEF2.tmp" 
-Creating temporary file "C:\Users\chejf\AppData\Local\Temp\RSPEEF3.tmp" with contents
+Creating command line "cl.exe @C:\Users\chejf\AppData\Local\Temp\RSP13E.tmp" 
+Creating temporary file "C:\Users\chejf\AppData\Local\Temp\RSP13F.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib USB_Driver.lib /nologo /dll /incremental:no /pdb:"Release/SpectraArsenal.pdb" /machine:I386 /out:"Release/SpectraArsenal.dll" /implib:"Release/SpectraArsenal.lib" 
 .\Release\Com_Driver.obj
@@ -20,11 +22,13 @@ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32
 .\Release\SpectraArsenal.obj
 .\Release\StdAfx.obj
 ]
-Creating command line "link.exe @C:\Users\chejf\AppData\Local\Temp\RSPEEF3.tmp"
+Creating command line "link.exe @C:\Users\chejf\AppData\Local\Temp\RSP13F.tmp"
 <h3>Output Window</h3>
 Compiling...
+Com_Driver.cpp
+MIGP.cpp
 SpectraArsenal.cpp
-D:\GitHub\singlebranch\Spectral\SPDriver\winDriver_libwin32\SpectraArsenalForGCS_V5.02\SpectraArsenal.cpp(2509) : warning C4101: 'un32Temp' : unreferenced local variable
+Generating Code...
 Linking...
    Creating library Release/SpectraArsenal.lib and object Release/SpectraArsenal.exp
 Creating command line "bscmake.exe /nologo /o"Release/SpectraArsenal.bsc"  .\Release\Com_Driver.sbr .\Release\MIGP.sbr .\Release\SpectraArsenal.sbr .\Release\StdAfx.sbr"
@@ -34,7 +38,7 @@ Creating browse info file...
 
 
 <h3>Results</h3>
-SpectraArsenal.dll - 0 error(s), 1 warning(s)
+SpectraArsenal.dll - 0 error(s), 0 warning(s)
 </pre>
 </body>
 </html>
