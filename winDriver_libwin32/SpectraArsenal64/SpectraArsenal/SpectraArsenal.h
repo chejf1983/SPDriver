@@ -102,7 +102,8 @@ SPECTRAARSENAL_API int SA_GetSpectumHWTrigger(int spectrometerIndex, double *pdS
 
 
 /* 多通道采集相关操作接口 */
-SPECTRAARSENAL_API int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec, int usec_num);
+SPECTRAARSENAL_API int SA_SetMultiChannelIntegrationTime0 (int spectrometerIndex, int *usec, int usec_num);
+SPECTRAARSENAL_API int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec);
 SPECTRAARSENAL_API int SA_GetMultiChannelSpectum(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber, int iChannelNum);
 
 
@@ -124,6 +125,7 @@ SPECTRAARSENAL_API int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pd
 
 /* 脉冲氙灯相关操作接口 */
 SPECTRAARSENAL_API int SA_SetXenonFlashPara(int spectrometerIndex, int iPulseWidth, int IntervalTime, int iDelayTime, int PulseNumber);
+SPECTRAARSENAL_API int SA_GetXenonFlashPara(int spectrometerIndex, int *iPulseWidth, int *IntervalTime, int *iDelayTime, int *PulseNumber);
 SPECTRAARSENAL_API int SA_XenonFlashDisable(int spectrometerIndex);
 SPECTRAARSENAL_API int SA_XenonFlashEnable(int spectrometerIndex);
 

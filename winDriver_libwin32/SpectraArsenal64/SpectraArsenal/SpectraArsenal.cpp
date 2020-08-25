@@ -16,8 +16,6 @@
 #include "Com_Driver.h"
 #include "SpectraArsenal.h"
 
-
-
 BOOL APIENTRY DllMain( HANDLE hModule, 
                        DWORD  ul_reason_for_call, 
                        LPVOID lpReserved
@@ -35,7 +33,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 }
 
 const char acAPIVersion[] = "V5.03";
-
 const char acComName[32][14] = 
 {
 	"COM1",
@@ -74,12 +71,9 @@ const char acComName[32][14] =
 
 COMM_PARA_ST *apCommParaST[32];
 int g_iCommIndex = -1;
-double g_dPixWL_New[2048];
-double g_dPixWL_Per[1024];
 
 inline float SA_NewtonDifference(float *xa, float *ya, int n, float x)
 {
-
 	int i = 0;
 	int k = 1;
 	float fTemp = 0;
@@ -105,20 +99,16 @@ char* SA_GetAPIVersion(void)
 	return (char *)acAPIVersion;
 }
 
-
-
 /****************************************************************************************/
 /****************************************************************************************/
 /***************************** 光谱仪初始化操作接口**********************************/
 /****************************************************************************************/
 /****************************************************************************************/
-
-BOOL SA_SearchSpectrometers(int CommIndex)
+BOOL SA_InitSpectrometers(int CommIndex)
 {
 	BYTE *pbTemp;
 	int i = 0;
 	int j = 0;
-	int CommFlag = 0;
 	int iTemp;
 	UN_TYPE unTemp;
 	UN_32TYPE un32Temp;
@@ -126,72 +116,92 @@ BOOL SA_SearchSpectrometers(int CommIndex)
 
 	for(i = 0; i < 3; i++)
 	{
+		//读取EIA数据
 		if(MIGP_RegArea_Read(apCommParaST[CommIndex], EIA, 0x0000, 0x40, &pbTemp, 500) == TRUE)
 		{
+			//串口需要清理收发区域并且等待100ms
+			if(apCommParaST[CommIndex]->enCommType == COM_SERIAL)
+			{
+				Sleep(100);
+				PurgeComm(apCommParaST[CommIndex]->stComPara.ComHandle,  PURGE_RXCLEAR | PURGE_TXCLEAR);
+			}
 			for(i = 0; i < 16; i ++)
 			{
 				apCommParaST[CommIndex]->stEIA.aucEquipmentInfo[i] = pbTemp[i + 4]; 
 			}
+			//设备名称
 			apCommParaST[CommIndex]->stEIA.aucEquipmentInfo[16] = '\0';
-
+			//硬件版本
 			apCommParaST[CommIndex]->stEIA.ucHardWareVersion = pbTemp[0x10 + 4];
+			//软件版本
 			apCommParaST[CommIndex]->stEIA.aucSoftWareVersion[0] = pbTemp[0x18 + 4];
 			apCommParaST[CommIndex]->stEIA.aucSoftWareVersion[1] = pbTemp[0x19 + 4];
 			apCommParaST[CommIndex]->stEIA.aucSoftWareVersion[2] = pbTemp[0x1A + 4];
 			apCommParaST[CommIndex]->stEIA.aucSoftWareVersion[3] = pbTemp[0x1B + 4];
 			apCommParaST[CommIndex]->stEIA.aucSoftWareVersion[4] = '\0';
 
+			//获取序列号
 			for(i = 0; i < 16; i ++)
 			{
 				apCommParaST[CommIndex]->stEIA.aucSerialNumber[i] = pbTemp[EIA_SERIAL_NUMBER_ADDR + i + 4]; 
 			}
 			apCommParaST[CommIndex]->stEIA.aucSerialNumber[16] = '\0';
 
+			//读取生产日期
 			for(i = 0; i < 16; i ++)
 			{
 				apCommParaST[CommIndex]->stEIA.aucManufacturingDate[i] = pbTemp[EIA_MANUFACTURING_DATE_ADDR + i + 4]; 
 			}
 			apCommParaST[CommIndex]->stEIA.aucManufacturingDate[16] = '\0';
-
-			CommFlag = 1;
 			break;
 		}
 	}
 
-	if(CommFlag == 0)
+	if(i == 3)
 	{
 		printf_debug("SA_SearchSpectrometers:: Read EIA Error\r\n");
 		return FALSE;
 	}
- 
-	
 
+	//初始化基本信息
 	if(MIGP_RegArea_Read(apCommParaST[CommIndex], NVPA, 0x0000, 112, &pbTemp, 1000) == TRUE)
 	{
+		//串口需要清理收发区域并且等待100ms
+		if(apCommParaST[CommIndex]->enCommType == COM_SERIAL)
+		{
+			Sleep(100);
+			PurgeComm(apCommParaST[CommIndex]->stComPara.ComHandle,  PURGE_RXCLEAR | PURGE_TXCLEAR);
+		}
+		//读取起始波长
 		iTemp = (int)pbTemp[4 + NVPA_MIN_WAVELENGTH_ADDR] << 8;
 		iTemp |= (int)pbTemp[4 + NVPA_MIN_WAVELENGTH_ADDR + 1];
 		apCommParaST[CommIndex]->stSpectrometerPara.iStartWavelength = iTemp;
 		
+		//读取截至波长
 		iTemp = (int)pbTemp[4 + NVPA_MAX_WAVELENGTH_ADDR] << 8;
 		iTemp |= (int)pbTemp[4 + NVPA_MAX_WAVELENGTH_ADDR + 1];
 		apCommParaST[CommIndex]->stSpectrometerPara.iEndWavelength = iTemp;
 		
+		//读取最小积分时间
 		iTemp = (int)pbTemp[4 + NVPA_MIN_INTEGRAL_TIME_ADDR] << 24;
 		iTemp |= (int)pbTemp[5 + NVPA_MIN_INTEGRAL_TIME_ADDR] << 16;
 		iTemp |= (int)pbTemp[6 + NVPA_MIN_INTEGRAL_TIME_ADDR] << 8;
 		iTemp |= (int)pbTemp[7 + NVPA_MIN_INTEGRAL_TIME_ADDR];
 		apCommParaST[CommIndex]->stSpectrometerPara.iMinIntegrationTimeUS = iTemp;
 		
+		//读取最大积分时间
 		iTemp = (int)pbTemp[4 + NVPA_MAX_INTEGRAL_TIME_ADDR] << 24;
 		iTemp |= (int)pbTemp[5 + NVPA_MAX_INTEGRAL_TIME_ADDR] << 16;
 		iTemp |= (int)pbTemp[6 + NVPA_MAX_INTEGRAL_TIME_ADDR] << 8;
 		iTemp |= (int)pbTemp[7 + NVPA_MAX_INTEGRAL_TIME_ADDR];
 		apCommParaST[CommIndex]->stSpectrometerPara.iMaxIntegrationTimeUS = iTemp;
 		
+		//读取最像素点个数
 		iTemp = (int)pbTemp[4 + NVPA_PIXELS_NUMBER_ADDR] << 8;
 		iTemp |= (int)pbTemp[4 + NVPA_PIXELS_NUMBER_ADDR + 1];
 		apCommParaST[CommIndex]->stSpectrometerPara.iPixelNumber = iTemp;
 
+		//读取波长系数
 		for(i = 0; i < 4; i++)
 		{
 			unTemp.ab8Data[7] = (int)pbTemp[4 + (i * 8) + NVPA_WAVELENGTH_CALIB_ADDR];
@@ -212,28 +222,43 @@ BOOL SA_SearchSpectrometers(int CommIndex)
 
 	if(MIGP_RegArea_Read(apCommParaST[CommIndex], VPA, VPA_RUN_MODE_ADDR, 10, &pbTemp, 1000) == TRUE)
 	{
+		//串口需要清理收发区域并且等待100ms
+		if(apCommParaST[CommIndex]->enCommType == COM_SERIAL)
+		{
+			Sleep(100);
+			PurgeComm(apCommParaST[CommIndex]->stComPara.ComHandle,  PURGE_RXCLEAR | PURGE_TXCLEAR);
+		}
+		//初始化触发模式
 		apCommParaST[CommIndex]->stSpectrometerPara.cTriggerMode = pbTemp[4 + VPA_RUN_MODE_ADDR];
 		iTemp = (int)pbTemp[4 + VPA_INTE_TIME_ADDR] << 24;
 		iTemp |= (int)pbTemp[5 + VPA_INTE_TIME_ADDR] << 16;
 		iTemp |= (int)pbTemp[6 + VPA_INTE_TIME_ADDR] << 8;
 		iTemp |= (int)pbTemp[7 + VPA_INTE_TIME_ADDR];
+		//积分时间
 		apCommParaST[CommIndex]->stSpectrometerPara.iIntegrationTime = iTemp;
 		iTemp = (int)pbTemp[4] << 8;
 		iTemp |= (int)pbTemp[5];
+		//平均次数
 		apCommParaST[CommIndex]->stSpectrometerPara.iAverageTimes = iTemp;
 		iTemp = (int)pbTemp[6] << 8;
 		iTemp |= (int)pbTemp[7];
+		//触发延时
 		apCommParaST[CommIndex]->stSpectrometerPara.iTriggerDelay = iTemp;
-		//apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.cAutoIntegrationFlag = pbTemp[8];
-		
 	}
 	else
 	{
 		return FALSE;
 	}
 
+	//读取多同道积分时间
 	if(MIGP_RegArea_Read(apCommParaST[CommIndex], VPA, 112, 64, &pbTemp, 1000) == TRUE)
 	{
+		//串口需要清理收发区域并且等待100ms
+		if(apCommParaST[CommIndex]->enCommType == COM_SERIAL)
+		{
+			Sleep(100);
+			PurgeComm(apCommParaST[CommIndex]->stComPara.ComHandle,  PURGE_RXCLEAR | PURGE_TXCLEAR);
+		}
 
 		for(i = 0; i < 16; i++)
 		{
@@ -250,273 +275,16 @@ BOOL SA_SearchSpectrometers(int CommIndex)
 		return FALSE;
 	}
 
+	//读取非线性类型
 	if(MIGP_RegArea_Read(apCommParaST[CommIndex], NVPA, 0x0040, 1, &pbTemp, 500) == TRUE)
 	{
-		apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType = pbTemp[4];
-
-		//printf("cNonlinearCalibType %d \r\n", (int)apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.cNonlinearCalibType);
-
-		if(apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType != NONLINEAR_CALIB_DISABLE &&
-		   apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType != NONLINEAR_CALIB_WAVELENGTH &&
-		   apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType != NONLINEAR_CALIB_PIXEL &&
-		   apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType != NONLINEAR_CALIB_WAVELENGTH_II &&
-		   apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType != NONLINEAR_CALIB_PIXEL_II)
-		{
-			apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType = NONLINEAR_CALIB_DISABLE;
-		}
-
-		if(apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType == NONLINEAR_CALIB_DISABLE)
-		{
-			return TRUE;
-		}
-	}
-	else
-	{
-		return FALSE;
-	}
-
-	if(MIGP_RegArea_Read(apCommParaST[CommIndex], NVPA, 0x0041, 760, &pbTemp, 2000) == TRUE)
-	{
-		un32Temp.ab8Data[3] = (int)pbTemp[4];
-		un32Temp.ab8Data[2] = (int)pbTemp[5];
-		un32Temp.ab8Data[1] = (int)pbTemp[6];
-		un32Temp.ab8Data[0] = (int)pbTemp[7];
-		apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibLength = (int)un32Temp.f32Data;
-
-		if(apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibLength < 1 ||
-		   apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibLength > 8)
-		{
-			apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType = NONLINEAR_CALIB_DISABLE;
-			return TRUE;
-		}
-		//printf("iNonlinearCalibLength %d\r\n", (int)apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.iNonlinearCalibLength);
-
-		if(apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType == NONLINEAR_CALIB_WAVELENGTH ||
-		   apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType == NONLINEAR_CALIB_PIXEL)
-		{
-			for(i = 0; i < apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibLength; i++)
-			{
-				un32Temp.ab8Data[3] = (int)pbTemp[8 + (i * 88)];
-				un32Temp.ab8Data[2] = (int)pbTemp[9 + (i * 88)];
-				un32Temp.ab8Data[1] = (int)pbTemp[10 + (i * 88)];
-				un32Temp.ab8Data[0] = (int)pbTemp[11 + (i * 88)];
-				apCommParaST[CommIndex]->stSpectrometerPara.fNonlinearCalibPixelOrWL[i] = un32Temp.f32Data;
-				//printf("NonlinearCalibPixelOrWL %f\r\n", un32Temp.f32Data);
-				un32Temp.ab8Data[3] = (int)pbTemp[12 + (i * 88)];
-				un32Temp.ab8Data[2] = (int)pbTemp[13 + (i * 88)];
-				un32Temp.ab8Data[1] = (int)pbTemp[14 + (i * 88)];
-				un32Temp.ab8Data[0] = (int)pbTemp[15 + (i * 88)];
-				apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibCoNumber[i] = (int)un32Temp.f32Data;
-				if(apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibCoNumber[i] < 1 ||
-			   	   apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibCoNumber[i] > 10)
-				{
-					apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType = NONLINEAR_CALIB_DISABLE;
-					return TRUE;
-				}
-				
-				//printf("fNonlinearCalibCoNumber %d\r\n", (int)apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.iNonlinearCalibCoNumber[i]);
-				for(j = 0; j < apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibCoNumber[i]; j++)
-				{
-					un32Temp.ab8Data[3] = (int)pbTemp[16 + (i * 88) + (j * 8)];
-					un32Temp.ab8Data[2] = (int)pbTemp[17 + (i * 88) + (j * 8)];
-					un32Temp.ab8Data[1] = (int)pbTemp[18 + (i * 88) + (j * 8)];
-					un32Temp.ab8Data[0] = (int)pbTemp[19 + (i * 88) + (j * 8)];
-					apCommParaST[CommIndex]->stSpectrometerPara.afNonlinearCalibAD[i][j] = un32Temp.f32Data;
-					//printf("AD %f ", apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.afNonlinearCalibAD[i][j]);
-					un32Temp.ab8Data[3] = (int)pbTemp[20 + (i * 88) + (j * 8)];
-					un32Temp.ab8Data[2] = (int)pbTemp[21 + (i * 88) + (j * 8)];
-					un32Temp.ab8Data[1] = (int)pbTemp[22 + (i * 88) + (j * 8)];
-					un32Temp.ab8Data[0] = (int)pbTemp[23 + (i * 88) + (j * 8)];
-					apCommParaST[CommIndex]->stSpectrometerPara.afNonlinearCalibCo[i][j] = un32Temp.f32Data;
-				    //printf("CalibCo %f\r\n", apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.afNonlinearCalibCo[i][j]);
-				}
-				
-			}
-		}
-		else if(apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType == NONLINEAR_CALIB_WAVELENGTH_II ||
-		        apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType == NONLINEAR_CALIB_PIXEL_II)
-		{
-			iLengthTemp = 8;
-			for(i = 0; i < apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibLength; i++)
-			{
-				un32Temp.ab8Data[3] = (int)pbTemp[0 + iLengthTemp];
-				un32Temp.ab8Data[2] = (int)pbTemp[1 + iLengthTemp];
-				un32Temp.ab8Data[1] = (int)pbTemp[2 + iLengthTemp];
-				un32Temp.ab8Data[0] = (int)pbTemp[3 + iLengthTemp];
-				iLengthTemp = iLengthTemp + 4;
-				apCommParaST[CommIndex]->stSpectrometerPara.fNonlinearCalibPixelOrWL[i] = un32Temp.f32Data;
-				//printf("NonlinearCalibPixelOrWL %f\r\n", un32Temp.f32Data);
-				un32Temp.ab8Data[3] = (int)pbTemp[0 + iLengthTemp];
-				un32Temp.ab8Data[2] = (int)pbTemp[1 + iLengthTemp];
-				un32Temp.ab8Data[1] = (int)pbTemp[2 + iLengthTemp];
-				un32Temp.ab8Data[0] = (int)pbTemp[3 + iLengthTemp];
-				iLengthTemp = iLengthTemp + 4;
-				apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibCoNumber[i] = (int)un32Temp.f32Data;
-				
-				//printf("fNonlinearCalibCoNumber %d\r\n", (int)apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.iNonlinearCalibCoNumber[i]);
-				for(j = 0; j < apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibCoNumber[i]; j++)
-				{
-					un32Temp.ab8Data[3] = (int)pbTemp[0 + iLengthTemp];
-					un32Temp.ab8Data[2] = (int)pbTemp[1 + iLengthTemp];
-					un32Temp.ab8Data[1] = (int)pbTemp[2 + iLengthTemp];
-					un32Temp.ab8Data[0] = (int)pbTemp[3 + iLengthTemp];
-					iLengthTemp = iLengthTemp + 4;
-					apCommParaST[CommIndex]->stSpectrometerPara.afNonlinearCalibAD[i][j] = un32Temp.f32Data;
-					//printf("AD %f ", apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.afNonlinearCalibAD[i][j]);
-					un32Temp.ab8Data[3] = (int)pbTemp[0 + iLengthTemp];
-					un32Temp.ab8Data[2] = (int)pbTemp[1 + iLengthTemp];
-					un32Temp.ab8Data[1] = (int)pbTemp[2 + iLengthTemp];
-					un32Temp.ab8Data[0] = (int)pbTemp[3 + iLengthTemp];
-					iLengthTemp = iLengthTemp + 4;
-					apCommParaST[CommIndex]->stSpectrometerPara.afNonlinearCalibCo[i][j] = un32Temp.f32Data;
-					//printf("CalibCo %f\r\n", apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.afNonlinearCalibCo[i][j]);
-					if(iLengthTemp > 760)
-					{
-						apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType = NONLINEAR_CALIB_DISABLE;
-						return TRUE;
-					}
-				}
-				
-			}
-		}
-	}
-	else
-	{
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-BOOL SA_SearchSpectrometersForSerial(int CommIndex)
-{
-	BYTE *pbTemp;
-	int i = 0;
-	int j = 0;
-	int CommFlag = 0;
-	int iTemp;
-	UN_TYPE unTemp;
-	UN_32TYPE un32Temp;
-	int iLengthTemp = 0;
-
-	for(i = 0; i < 3; i++)
-	{
-		if(MIGP_RegArea_Read(apCommParaST[CommIndex], EIA, 0x0000, 0x40, &pbTemp, 500) == TRUE)
+		//串口需要清理收发区域并且等待100ms
+		if(apCommParaST[CommIndex]->enCommType == COM_SERIAL)
 		{
 			Sleep(100);
 			PurgeComm(apCommParaST[CommIndex]->stComPara.ComHandle,  PURGE_RXCLEAR | PURGE_TXCLEAR);
-			for(i = 0; i < 16; i ++)
-			{
-				apCommParaST[CommIndex]->stEIA.aucEquipmentInfo[i] = pbTemp[i + 4]; 
-			}
-			apCommParaST[CommIndex]->stEIA.aucEquipmentInfo[16] = '\0';
-
-			apCommParaST[CommIndex]->stEIA.ucHardWareVersion = pbTemp[0x10 + 4];
-			apCommParaST[CommIndex]->stEIA.aucSoftWareVersion[0] = pbTemp[0x18 + 4];
-			apCommParaST[CommIndex]->stEIA.aucSoftWareVersion[1] = pbTemp[0x19 + 4];
-			apCommParaST[CommIndex]->stEIA.aucSoftWareVersion[2] = pbTemp[0x1A + 4];
-			apCommParaST[CommIndex]->stEIA.aucSoftWareVersion[3] = pbTemp[0x1B + 4];
-			apCommParaST[CommIndex]->stEIA.aucSoftWareVersion[4] = '\0';
-
-			for(i = 0; i < 16; i ++)
-			{
-				apCommParaST[CommIndex]->stEIA.aucSerialNumber[i] = pbTemp[EIA_SERIAL_NUMBER_ADDR + i + 4]; 
-			}
-			apCommParaST[CommIndex]->stEIA.aucSerialNumber[16] = '\0';
-
-			for(i = 0; i < 16; i ++)
-			{
-				apCommParaST[CommIndex]->stEIA.aucManufacturingDate[i] = pbTemp[EIA_MANUFACTURING_DATE_ADDR + i + 4]; 
-			}
-			apCommParaST[CommIndex]->stEIA.aucManufacturingDate[16] = '\0';
-
-			CommFlag = 1;
-			break;
 		}
-	}
-
-	if(CommFlag == 0)
-	{
-		return FALSE;
-	}
-
-	if(MIGP_RegArea_Read(apCommParaST[CommIndex], NVPA, 0x0000, 112, &pbTemp, 1000) == TRUE)
-	{
-		Sleep(100);
-		PurgeComm(apCommParaST[CommIndex]->stComPara.ComHandle,  PURGE_RXCLEAR | PURGE_TXCLEAR);
-		iTemp = (int)pbTemp[4 + NVPA_MIN_WAVELENGTH_ADDR] << 8;
-		iTemp |= (int)pbTemp[4 + NVPA_MIN_WAVELENGTH_ADDR + 1];
-		apCommParaST[CommIndex]->stSpectrometerPara.iStartWavelength = iTemp;
-		
-		iTemp = (int)pbTemp[4 + NVPA_MAX_WAVELENGTH_ADDR] << 8;
-		iTemp |= (int)pbTemp[4 + NVPA_MAX_WAVELENGTH_ADDR + 1];
-		apCommParaST[CommIndex]->stSpectrometerPara.iEndWavelength = iTemp;
-		
-		iTemp = (int)pbTemp[4 + NVPA_MIN_INTEGRAL_TIME_ADDR] << 24;
-		iTemp |= (int)pbTemp[5 + NVPA_MIN_INTEGRAL_TIME_ADDR] << 16;
-		iTemp |= (int)pbTemp[6 + NVPA_MIN_INTEGRAL_TIME_ADDR] << 8;
-		iTemp |= (int)pbTemp[7 + NVPA_MIN_INTEGRAL_TIME_ADDR];
-		apCommParaST[CommIndex]->stSpectrometerPara.iMinIntegrationTimeUS = iTemp;
-		
-		iTemp = (int)pbTemp[4 + NVPA_MAX_INTEGRAL_TIME_ADDR] << 24;
-		iTemp |= (int)pbTemp[5 + NVPA_MAX_INTEGRAL_TIME_ADDR] << 16;
-		iTemp |= (int)pbTemp[6 + NVPA_MAX_INTEGRAL_TIME_ADDR] << 8;
-		iTemp |= (int)pbTemp[7 + NVPA_MAX_INTEGRAL_TIME_ADDR];
-		apCommParaST[CommIndex]->stSpectrometerPara.iMaxIntegrationTimeUS = iTemp;
-		
-		iTemp = (int)pbTemp[4 + NVPA_PIXELS_NUMBER_ADDR] << 8;
-		iTemp |= (int)pbTemp[4 + NVPA_PIXELS_NUMBER_ADDR + 1];
-		apCommParaST[CommIndex]->stSpectrometerPara.iPixelNumber = iTemp;
-
-		for(i = 0; i < 4; i++)
-		{
-			unTemp.ab8Data[7] = (int)pbTemp[4 + (i * 8) + NVPA_WAVELENGTH_CALIB_ADDR];
-			unTemp.ab8Data[6] = (int)pbTemp[5 + (i * 8) + NVPA_WAVELENGTH_CALIB_ADDR];
-			unTemp.ab8Data[5] = (int)pbTemp[6 + (i * 8) + NVPA_WAVELENGTH_CALIB_ADDR];
-			unTemp.ab8Data[4] = (int)pbTemp[7 + (i * 8) + NVPA_WAVELENGTH_CALIB_ADDR];
-			unTemp.ab8Data[3] = (int)pbTemp[8 + (i * 8) + NVPA_WAVELENGTH_CALIB_ADDR];
-			unTemp.ab8Data[2] = (int)pbTemp[9 + (i * 8) + NVPA_WAVELENGTH_CALIB_ADDR];
-			unTemp.ab8Data[1] = (int)pbTemp[10 + (i * 8) + NVPA_WAVELENGTH_CALIB_ADDR];
-			unTemp.ab8Data[0] = (int)pbTemp[11 + (i * 8) + NVPA_WAVELENGTH_CALIB_ADDR];
-			apCommParaST[CommIndex]->stSpectrometerPara.adWavelengthCalib[i] = unTemp.d64Data;
-		}
-	}
-	else
-	{
-		return FALSE;
-	}
-
-	if(MIGP_RegArea_Read(apCommParaST[CommIndex], VPA, VPA_RUN_MODE_ADDR, 10, &pbTemp, 1000) == TRUE)
-	{
-		Sleep(100);
-		PurgeComm(apCommParaST[CommIndex]->stComPara.ComHandle,  PURGE_RXCLEAR | PURGE_TXCLEAR);
-		apCommParaST[CommIndex]->stSpectrometerPara.cTriggerMode = pbTemp[4 + VPA_RUN_MODE_ADDR];
-		iTemp = (int)pbTemp[4 + VPA_INTE_TIME_ADDR] << 24;
-		iTemp |= (int)pbTemp[5 + VPA_INTE_TIME_ADDR] << 16;
-		iTemp |= (int)pbTemp[6 + VPA_INTE_TIME_ADDR] << 8;
-		iTemp |= (int)pbTemp[7 + VPA_INTE_TIME_ADDR];
-		apCommParaST[CommIndex]->stSpectrometerPara.iIntegrationTime = iTemp;
-		iTemp = (int)pbTemp[4] << 8;
-		iTemp |= (int)pbTemp[5];
-		apCommParaST[CommIndex]->stSpectrometerPara.iAverageTimes = iTemp;
-		iTemp = (int)pbTemp[6] << 8;
-		iTemp |= (int)pbTemp[7];
-		apCommParaST[CommIndex]->stSpectrometerPara.iTriggerDelay = iTemp;
-		//apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.cAutoIntegrationFlag = pbTemp[8];
-		
-	}
-	else
-	{
-		return FALSE;
-	}
-
-	if(MIGP_RegArea_Read(apCommParaST[CommIndex], NVPA, 0x0040, 1, &pbTemp, 500) == TRUE)
-	{
-		Sleep(100);
-		PurgeComm(apCommParaST[CommIndex]->stComPara.ComHandle,  PURGE_RXCLEAR | PURGE_TXCLEAR);
 		apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType = pbTemp[4];
-
-		//printf("cNonlinearCalibType %d \r\n", (int)apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.cNonlinearCalibType);
 
 		if(apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType != NONLINEAR_CALIB_DISABLE &&
 		   apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType != NONLINEAR_CALIB_WAVELENGTH &&
@@ -537,35 +305,44 @@ BOOL SA_SearchSpectrometersForSerial(int CommIndex)
 		return FALSE;
 	}
 
+	//读取非线性系数
 	if(MIGP_RegArea_Read(apCommParaST[CommIndex], NVPA, 0x0041, 760, &pbTemp, 2000) == TRUE)
 	{
-		Sleep(100);
-		PurgeComm(apCommParaST[CommIndex]->stComPara.ComHandle,  PURGE_RXCLEAR | PURGE_TXCLEAR);
+		//串口需要清理收发区域并且等待100ms
+		if(apCommParaST[CommIndex]->enCommType == COM_SERIAL)
+		{
+			Sleep(100);
+			PurgeComm(apCommParaST[CommIndex]->stComPara.ComHandle,  PURGE_RXCLEAR | PURGE_TXCLEAR);
+		}
+		//非线性定标长度
 		un32Temp.ab8Data[3] = (int)pbTemp[4];
 		un32Temp.ab8Data[2] = (int)pbTemp[5];
 		un32Temp.ab8Data[1] = (int)pbTemp[6];
 		un32Temp.ab8Data[0] = (int)pbTemp[7];
 		apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibLength = (int)un32Temp.f32Data;
 
+		//非线性点数只能是1-8
 		if(apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibLength < 1 ||
 		   apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibLength > 8)
 		{
 			apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType = NONLINEAR_CALIB_DISABLE;
 			return TRUE;
 		}
-		//printf("iNonlinearCalibLength %d\r\n", (int)apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.iNonlinearCalibLength);
 
+		//波长和像素定标I型
 		if(apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType == NONLINEAR_CALIB_WAVELENGTH ||
 		   apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType == NONLINEAR_CALIB_PIXEL)
 		{
 			for(i = 0; i < apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibLength; i++)
 			{
+				//读取当前点个波长值或者像素值
 				un32Temp.ab8Data[3] = (int)pbTemp[8 + (i * 88)];
 				un32Temp.ab8Data[2] = (int)pbTemp[9 + (i * 88)];
 				un32Temp.ab8Data[1] = (int)pbTemp[10 + (i * 88)];
 				un32Temp.ab8Data[0] = (int)pbTemp[11 + (i * 88)];
 				apCommParaST[CommIndex]->stSpectrometerPara.fNonlinearCalibPixelOrWL[i] = un32Temp.f32Data;
-				//printf("NonlinearCalibPixelOrWL %f\r\n", un32Temp.f32Data);
+				
+				//读取非线性当前点还有的非线性校准点个数
 				un32Temp.ab8Data[3] = (int)pbTemp[12 + (i * 88)];
 				un32Temp.ab8Data[2] = (int)pbTemp[13 + (i * 88)];
 				un32Temp.ab8Data[1] = (int)pbTemp[14 + (i * 88)];
@@ -578,25 +355,26 @@ BOOL SA_SearchSpectrometersForSerial(int CommIndex)
 					return TRUE;
 				}
 				
-				//printf("fNonlinearCalibCoNumber %d\r\n", (int)apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.iNonlinearCalibCoNumber[i]);
+				//读取当前点在不同的AD值下的校准系数
 				for(j = 0; j < apCommParaST[CommIndex]->stSpectrometerPara.iNonlinearCalibCoNumber[i]; j++)
 				{
+					//读取AD值
 					un32Temp.ab8Data[3] = (int)pbTemp[16 + (i * 88) + (j * 8)];
 					un32Temp.ab8Data[2] = (int)pbTemp[17 + (i * 88) + (j * 8)];
 					un32Temp.ab8Data[1] = (int)pbTemp[18 + (i * 88) + (j * 8)];
 					un32Temp.ab8Data[0] = (int)pbTemp[19 + (i * 88) + (j * 8)];
 					apCommParaST[CommIndex]->stSpectrometerPara.afNonlinearCalibAD[i][j] = un32Temp.f32Data;
-					//printf("AD %f ", apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.afNonlinearCalibAD[i][j]);
+
+					//读取点校准系数
 					un32Temp.ab8Data[3] = (int)pbTemp[20 + (i * 88) + (j * 8)];
 					un32Temp.ab8Data[2] = (int)pbTemp[21 + (i * 88) + (j * 8)];
 					un32Temp.ab8Data[1] = (int)pbTemp[22 + (i * 88) + (j * 8)];
 					un32Temp.ab8Data[0] = (int)pbTemp[23 + (i * 88) + (j * 8)];
 					apCommParaST[CommIndex]->stSpectrometerPara.afNonlinearCalibCo[i][j] = un32Temp.f32Data;
-				    //printf("CalibCo %f\r\n", apCommParaST[g_iCommIndex + 1]->stSpectrometerPara.afNonlinearCalibCo[i][j]);
 				}
 				
 			}
-		}
+		}//波长和像素定标II型
 		else if(apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType == NONLINEAR_CALIB_WAVELENGTH_II ||
 		        apCommParaST[CommIndex]->stSpectrometerPara.cNonlinearCalibType == NONLINEAR_CALIB_PIXEL_II)
 		{
@@ -651,7 +429,6 @@ BOOL SA_SearchSpectrometersForSerial(int CommIndex)
 
 	return TRUE;
 }
-
 
 int SA_OpenSpectrometers(void)
 {
@@ -695,7 +472,7 @@ int SA_OpenSpectrometers(void)
 				apCommParaST[g_iCommIndex + 1]->stMIGP.bMasterAddress = 0xFE;
 				apCommParaST[g_iCommIndex + 1]->stMIGP.bSlaveAddress = 0x00;
 
-				if(SA_SearchSpectrometers(g_iCommIndex + 1) == TRUE)
+				if(SA_InitSpectrometers(g_iCommIndex + 1) == TRUE)
 				{
 					g_iCommIndex++;
 				}
@@ -714,13 +491,9 @@ int SA_OpenSpectrometers(void)
 
 int SA_OpenSpectrometersForSerial(void)
 {
-	//BYTE *pbTemp;
-	//UN_TYPE unTemp;
-	//UN_32TYPE un32Temp;
 	COMM_PARA_ST *pstMigpPara = NULL;
 	HANDLE CommDev;
 	int i = 0;
-	//int iTemp;
 	
 	g_iCommIndex = -1;
 
@@ -731,7 +504,6 @@ int SA_OpenSpectrometersForSerial(void)
 			apCommParaST[g_iCommIndex + 1] = (COMM_PARA_ST *)malloc(sizeof(COMM_PARA_ST));
 			if(apCommParaST[g_iCommIndex + 1] == NULL)
 			{
-//				printf_debug("SA_OpenSpectrometers:: malloc NULL");
 				Com_Close(CommDev);
 				free(apCommParaST[g_iCommIndex + 1]);
 			}
@@ -744,13 +516,12 @@ int SA_OpenSpectrometersForSerial(void)
 				apCommParaST[g_iCommIndex + 1]->stMIGP.bMasterAddress = 0xFE;
 				apCommParaST[g_iCommIndex + 1]->stMIGP.bSlaveAddress = 0x00;
 
-				if(SA_SearchSpectrometersForSerial(g_iCommIndex + 1) == TRUE)
+				if(SA_InitSpectrometers(g_iCommIndex + 1) == TRUE)
 				{
 					g_iCommIndex++;
 				}
 				else
 				{
-//					printf_debug("SA_OpenSpectrometers:: MIGP_RegArea_Read FAIL");
 					Com_Close(CommDev);
 					free(apCommParaST[g_iCommIndex + 1]);
 				}
@@ -794,7 +565,7 @@ int SA_OpenSpectrometersSimplifyForSerial(int iComID)
 			apCommParaST[0]->stMIGP.bMasterAddress = 0xFE;
 			apCommParaST[0]->stMIGP.bSlaveAddress = 0x00;
 
-			if(SA_SearchSpectrometersForSerial(0) == TRUE)
+			if(SA_InitSpectrometers(0) == TRUE)
 			{
 				g_iCommIndex = 0;
 			}
@@ -1204,29 +975,11 @@ int SA_GetWavelength(int spectrometerIndex, double *pdWavelengthData, int *pSpec
 	dCalib[3] = apCommParaST[spectrometerIndex]->stSpectrometerPara.adWavelengthCalib[3];
 	
 	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-	if(*pSpectumNumber == 1024)
+	for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
 	{
-		*pSpectumNumber = 2048;//apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-		for(i = 0; i < 2048; i++)
-		{
-			double fWL = dCalib[0] + (dCalib[1] * i) + (dCalib[2] * i * i) + (dCalib[3] * i * i * i);
-
-			g_dPixWL_New[i] = fWL;
-			pdWavelengthData[i] = fWL;
- 		}
- 		for(i = 0; i < 1024; i++)
- 		{
- 			g_dPixWL_Per[i] = g_dPixWL_New[i * 2 + 1];
- 		}
+		pdWavelengthData[i] = dCalib[0] + (dCalib[1] * i) + (dCalib[2] * i * i) + (dCalib[3] * i * i * i);
 	}
-	else
-	{
-		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-		{
-			pdWavelengthData[i] = dCalib[0] + (dCalib[1] * i) + (dCalib[2] * i * i) + (dCalib[3] * i * i * i);
-		}
-	}
-
+	
 	return SA_API_SUCCESS;
 }
 
@@ -1524,57 +1277,11 @@ int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int *pSpectumNum
 	}
 
 
-	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-	if(*pSpectumNumber == 1024)
+	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;	
+	for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
 	{
-		
-		double pTempData[1024];
-		for(i = 0; i < 1024; i++)
-		{
-			pTempData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
-		}
-		*pSpectumNumber = 2048;//apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-		int iPerStart = 1;
-		int m, k;
-		float u;
-		k=1;
-		for(i = 0; i < 2048; i++)
- 		{
- 			if (1)
-			{
-				for(m = iPerStart; m <= 1024-2; m++)
-				{
-					if( g_dPixWL_New[i] <= g_dPixWL_Per[m] )
-					{
-						k=m;
-						break;
-					}
-					else
-						k=1024-1;
-				}
-				iPerStart = k;
-				if ((g_dPixWL_Per[k]-g_dPixWL_Per[k-1]) != 0)
-				{
-					u=(float)((g_dPixWL_New[i]-g_dPixWL_Per[k-1])/(g_dPixWL_Per[k]-g_dPixWL_Per[k-1]));
-				}
-				else
-				{
-					u = 0;
-				}
-				pdSpectumData[i] = pTempData[k-1]+u*(pTempData[k]-pTempData[k-1]);
-			}
-
- 		}
-		u=(float)((g_dPixWL_New[2047]-g_dPixWL_Per[1023])/(g_dPixWL_Per[1023]-g_dPixWL_Per[1022]));
-		pdSpectumData[2047] = pTempData[1023]+u*(pTempData[1023]-pTempData[1022]);
-	}
-	else
-	{
-		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-		{
-			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
-		}
-	}
+		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+	}	
  	
 	return SA_API_SUCCESS;
 }
@@ -1846,14 +1553,7 @@ int SA_GetSpectrometerPixelsNumber (int spectrometerIndex)
 	}
 
 	int pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-	if(pSpectumNumber == 1024)
-	{
-		return 2048;
-	}
-	else
-	{
-		return apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-	}
+	return apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
 }
 
 /****************************************************************************************/
@@ -2506,8 +2206,6 @@ int SA_GetXenonFlashPara(int spectrometerIndex, int *iPulseWidth, int *IntervalT
 	BYTE *pbTemp;
 	int i = 0;
 	int iTimeOut = 500;
-	UN_32TYPE un32Temp;
-
 		
 	if(spectrometerIndex > g_iCommIndex)
 	{	
@@ -2584,6 +2282,7 @@ typedef enum
 	SRA
 }AREA_TYPE;
 */
+
 int SA_ReadMemory(int spectrometerIndex, int MEM, int Address, int length, BYTE * UserData)
 {
 	BYTE *pbTemp;

@@ -68,6 +68,7 @@
 
 #define CHL_NUM 16
 
+//内存类型
 typedef enum
 {
 	EIA,
@@ -77,6 +78,7 @@ typedef enum
 	SRA
 }AREA_TYPE;
 
+//通讯类型
 typedef enum
 {
 	COM_SERIAL,
@@ -84,7 +86,7 @@ typedef enum
 	TCP_ETHERNET
 }COMM_TYPE;
 
-
+//MIPG信息
 typedef struct
 {
     BYTE bMasterAddress;
@@ -98,6 +100,7 @@ typedef struct
     BYTE  bFrameTxBuff[MIGP_REV_FRAME_MAX_LENGTH];
 }MIGP_ST;
 
+//串口信息
 typedef struct
 {
 	HANDLE ComHandle;
@@ -106,54 +109,56 @@ typedef struct
 	char acComName[50];
 }COM_PARA_ST;
 
-
+//TCP信息
 typedef struct
 {
 	
 }NET_PARA_ST;
 
+
 typedef struct
 {
-	char cTriggerMode;
-	int iIntegrationTime;
-	int iChannelIntegrationTime[CHL_NUM];
-	int iAverageTimes;
-	int iTriggerDelay;
+	char cTriggerMode; //触发模式
+	int iIntegrationTime;//积分时间
+	int iChannelIntegrationTime[CHL_NUM];//多同道积分时间
+	int iAverageTimes;//平均次数
+	int iTriggerDelay;//触发延时
 	
-    int iStartWavelength;
-    int iEndWavelength;
-    int iMinIntegrationTimeUS;
-    int iMaxIntegrationTimeUS;
-    int iPixelNumber;
-	int iAverageWidth;
+    int iStartWavelength; //起始波长
+    int iEndWavelength;	  //截至波长
+    int iMinIntegrationTimeUS;//最小积分时间
+    int iMaxIntegrationTimeUS;//最大积分时间
+    int iPixelNumber;//像素点个数
+	int iAverageWidth;//滤波宽度
 	
-    double adWavelengthCalib[4];
-    char cNonlinearCalibType;
-    int iNonlinearCalibLength;
+    double adWavelengthCalib[4];//定标系数
+    char cNonlinearCalibType;//非线性定标类型
+    int iNonlinearCalibLength;//分显性定标长度
     float fNonlinearCalibPixelOrWL[8];
     int iNonlinearCalibCoNumber[8];
     float afNonlinearCalibAD[8][10];
     float afNonlinearCalibCo[8][10];
 }SP_PARA_ST;
 
-
+//EIA信息
 typedef struct
 {
-	char aucEquipmentInfo[17];
-    char ucHardWareVersion;
-    char aucSoftWareVersion[5];
-    char aucSerialNumber[17];
-    char aucManufacturingDate[17];
+	char aucEquipmentInfo[17]; //设备名称
+    char ucHardWareVersion;    //硬件版本
+    char aucSoftWareVersion[5];//软件版本
+    char aucSerialNumber[17];  //序列号
+    char aucManufacturingDate[17];//生产日期
 }EIA_ST;
 
+//通信结构
 typedef struct
 {
-	COMM_TYPE enCommType;
-    MIGP_ST stMIGP;
-	COM_PARA_ST stComPara;
-	NET_PARA_ST stNetPara;
-	SP_PARA_ST stSpectrometerPara;
-    EIA_ST stEIA;
+	COMM_TYPE enCommType;   //通信类型
+    MIGP_ST stMIGP;         //MIPG协议信息
+	COM_PARA_ST stComPara;  //串口信息
+	NET_PARA_ST stNetPara;  //TCP信息
+	SP_PARA_ST stSpectrometerPara;  //光谱仪参数
+    EIA_ST stEIA;           //设备信息
 }COMM_PARA_ST;
 
 typedef union
