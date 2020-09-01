@@ -201,6 +201,9 @@ BOOL SA_InitSpectrometers(int CommIndex)
 		iTemp |= (int)pbTemp[4 + NVPA_PIXELS_NUMBER_ADDR + 1];
 		apCommParaST[CommIndex]->stSpectrometerPara.iPixelNumber = iTemp;
 
+		iTemp = (int)pbTemp[4 + NVPA_PIXELS_TYPE_ADDR];
+		apCommParaST[CommIndex]->stSpectrometerPara.iPixelType = iTemp;
+
 		//读取波长系数
 		for(i = 0; i < 4; i++)
 		{
@@ -650,13 +653,11 @@ int SA_SetMultiChannelIntegrationTime0 (int spectrometerIndex, int *usec, int us
 
 	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], VPA, 112, 32, bTemp, MIGP_ACK_RX_ENABLE) == FALSE)
 	{
-
 		return SA_API_FAIL;
 	}
 
 	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], VPA, 144, 32, &bTemp[32], MIGP_ACK_RX_ENABLE) == FALSE)
 	{
-
 		return SA_API_FAIL;
 	}
 
@@ -1073,10 +1074,23 @@ int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int *p
 	}
 
 	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-	for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-	{
-		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+
+	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 0x01)
+	{	
+		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+		{
+			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2) + 1] * 256) + pbTemp[4 + (i * 2)]);
+		}
+	}else{
+		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+		{
+			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+		}	
 	}
+//	for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+//	{
+//		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+//	}
 
 
 
@@ -1278,10 +1292,19 @@ int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int *pSpectumNum
 
 
 	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;	
-	for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-	{
-		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
-	}	
+
+	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 0x01)
+	{	
+		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+		{
+			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2) + 1] * 256) + pbTemp[4 + (i * 2)]);
+		}
+	}else{
+		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+		{
+			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+		}	
+	}
  	
 	return SA_API_SUCCESS;
 }
@@ -1352,10 +1375,23 @@ int SA_GetSpectumAutoIntegrationTime(int spectrometerIndex, double *pdSpectumDat
 	}
 
 	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-	for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-	{
-		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 0x01)
+	{	
+		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+		{
+			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2) + 1] * 256) + pbTemp[4 + (i * 2)]);
+		}
+	}else{
+		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+		{
+			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+		}	
 	}
+	
+	//for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+	//{
+//		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+//	}
 
 
 	
@@ -1411,10 +1447,23 @@ int SA_GetMultiChannelSpectum(int spectrometerIndex, double *pdSpectumData, int 
 	}
 
 	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-	for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-	{
-		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+
+	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 0x01)
+	{	
+		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+		{
+			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2) + 1] * 256) + pbTemp[4 + (i * 2)]);
+		}
+	}else{
+		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+		{
+			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+		}	
 	}
+	//for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+	//{
+	//	pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+	//}
 
 
 
@@ -1445,10 +1494,22 @@ int SA_GetSpectumHWTrigger(int spectrometerIndex, double *pdSpectumData, int *pS
 
 #if 1
 	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-	for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-	{
-		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 0x01)
+	{	
+		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+		{
+			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2) + 1] * 256) + pbTemp[4 + (i * 2)]);
+		}
+	}else{
+		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+		{
+			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+		}	
 	}
+	//for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+	//{
+///		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
+//	}
 
 #endif
 
