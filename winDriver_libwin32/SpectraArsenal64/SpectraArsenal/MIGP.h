@@ -130,6 +130,7 @@ typedef struct
     int iMaxIntegrationTimeUS;//最大积分时间
     int iPixelNumber;//像素点个数
 	int iAverageWidth;//滤波宽度
+	int iPixelType; //像素数据类型
 	
     double adWavelengthCalib[4];//定标系数
     char cNonlinearCalibType;//非线性定标类型
@@ -231,7 +232,7 @@ typedef union
 
 #define NVPA_OUTPUT_ADDR                  14
 
-#define NVPA_PIXELS_MISS_ADDR             16
+#define NVPA_PIXELS_TYPE_ADDR             16
 
 
 

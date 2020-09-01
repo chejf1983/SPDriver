@@ -266,7 +266,7 @@ BOOL MIGP_Receive_Frame(void *pstCommHandle, int iTimeOut, int ulFrameLength, BY
 					MIGP_Rev_Byte(&pstMigpPara->stMIGP, bRxBuff[i]);
 					if(pstMigpPara->stMIGP.bReceiveFlag == MIGP_FRAME_RX_FLAG_OK)
 					{
-						if(MIGP_Frame_Resolution(pstCommHandle, pbRxData, bCmd, 1) == FALSE)
+						if(MIGP_Frame_Resolution(pstCommHandle, pbRxData, bCmd, 0) == FALSE)
 						{
 							printf_debug("MIGP_Receive_Frame:: MIGP_Frame_Resolution is FALSE");
 							MIGP_RevBuff_Init(&pstMigpPara->stMIGP);
@@ -300,7 +300,7 @@ BOOL MIGP_Receive_Frame(void *pstCommHandle, int iTimeOut, int ulFrameLength, BY
 				MIGP_Rev_Byte(&pstMigpPara->stMIGP, bRxBuff[i]);
 				if(pstMigpPara->stMIGP.bReceiveFlag == MIGP_FRAME_RX_FLAG_OK)
 				{
-					if(MIGP_Frame_Resolution(pstCommHandle, pbRxData, bCmd, 1) == FALSE)
+					if(MIGP_Frame_Resolution(pstCommHandle, pbRxData, bCmd, 0) == FALSE)
 					{
 					    printf_debug("MIGP_Receive_Frame:: MIGP_Frame_Resolution is FALSE");
 						MIGP_RevBuff_Init(&pstMigpPara->stMIGP);
