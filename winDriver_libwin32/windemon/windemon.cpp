@@ -243,6 +243,89 @@ void CloseSpectrometers()
 	SA_CloseSpectrometers();
 	open_dev = -1;
 }
+
+//8
+void SA_MultiChannelIntegrationTime()
+{
+	if(open_dev < 0)
+	{
+		cout<<"请先打开光谱仪"<<endl;
+		return;
+	}
+	int usec[16] = {0};
+	for(int i = 0; i < 16; i++)usec[i] = 100;
+	usec[0] = 10000;
+	usec[1] = 100000;
+
+	//计时间
+	StartTime();  
+    if(SA_SetMultiChannelIntegrationTime(open_dev, usec) != 0)
+	{
+		cout<<"SA_SetMultiChannelIntegrationTime"<<" failed"<<endl;
+	}
+
+	if(SA_ScanStartMultiChannelAsyncSoftTrigger(open_dev, 16) != 0)
+	{
+		cout<<"SA_SetMultiChannelIntegrationTime"<<" failed"<<endl;
+	}
+
+
+
+	int state = 1;
+	int timeout_index = 0;
+	while(state != 0)
+	{
+		//确保超时保护
+		if(timeout_index ++ > timeout * 2)
+		{
+			cout<<"超时"<<endl;
+			return;
+		}
+
+		//查询状态0表示结束，1表示积分，2表示采集
+		if(SA_GetStateAsyncSoftTrigger(open_dev, &state) != 0)
+		{
+			cout<<"采集失败"<<endl;
+			return;
+		}else{
+			cout<<"状态:"<<state<<endl;
+		}
+		Sleep(100);
+	}
+
+	
+	if(SA_SetSpectumTriggerMode(open_dev, SOFTWARE_SYNCHRONOUS) != 0)
+	{
+		cout<<"SA_SetSpectumTriggerMode"<<" failed"<<endl;
+	}
+
+	double data[3000];
+	int spec_num;	
+	
+	//采样1
+	if(SA_GetMultiChannelSpectum(open_dev, data, &spec_num, 0) == 0)
+	{		
+		double TotTime = StopTime();
+
+		cout<<"获取设备:1获得1数据"<<spec_num<<"个，时间:"<<TotTime<<endl;
+		print_chart(data, spec_num);
+	}else{
+		cout<<"采集失败"<<endl;
+	}
+
+	//计时间
+	StartTime();  
+	//采样2
+	if(SA_GetMultiChannelSpectum(open_dev, data, &spec_num, 1) == 0)
+	{		
+		double TotTime = StopTime();
+
+		cout<<"获取设备:1获得2数据"<<spec_num<<"个，时间:"<<TotTime<<endl;
+		print_chart(data, spec_num);
+	}else{
+		cout<<"采集失败"<<endl;
+	}
+}
 //*************************************************************
 
 //*************************************************************
@@ -259,6 +342,7 @@ void print_info()
 	printf("[5] 读取光谱：      (SA_GetSpectum)\n");
 	printf("[6] 读取光谱(异步)：(SA_ScanStartAsyncSoftTrigger)\n");
 	printf("[7] 关闭光谱仪：    (SA_CloseSpectrometers)\n");
+	printf("[8] 多积分时间采集：(SA_MultiChannelIntegrationTime)\n");
 	printf("请输入操作命令,输入回撤,重复执行上一次命令,输入'exit'退出程序\n");
 }
 
@@ -314,6 +398,9 @@ void input_cmd(int cmd_num)
 			break;
 		case 7:
 			CloseSpectrometers();
+			break;
+		case 8:
+			SA_MultiChannelIntegrationTime();
 			break;
 		default:			
 			cout<<cmd_num<<endl;
