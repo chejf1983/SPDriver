@@ -32,7 +32,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     return TRUE;
 }
 
-const char acAPIVersion[] = "V6.00";
+const char acAPIVersion[] = "V6.01";
 const char acComName[32][14] = 
 {
 	"COM1",
@@ -320,6 +320,8 @@ int FFT_initFilter(int PointNum, int filternum)
           int inputlen 数据长度
 输出参数：返回1 数据长度和初始化的不一致，需要重新初始化滤波器 
 *****************************************************************/
+    //创建buffer 
+	compx* cinput = (compx *)malloc(FFTData_Len * sizeof(compx));
 int FFT_Filter(double *input, int inputlen)
 {
 	int i;
@@ -328,8 +330,6 @@ int FFT_Filter(double *input, int inputlen)
 		return 1;
 	}
 	
-    //创建buffer 
-	compx* cinput = (compx *)malloc(FFTData_Len * sizeof(compx));
 	
 	//将原始数据转换到复平面 
 	for(i = 0; i < FFTData_Len; i++)
@@ -512,9 +512,13 @@ BOOL SA_InitSpectrometers(int CommIndex)
 		iTemp = (int)pbTemp[4 + NVPA_PIXELS_NUMBER_ADDR] << 8;
 		iTemp |= (int)pbTemp[4 + NVPA_PIXELS_NUMBER_ADDR + 1];
 		apCommParaST[CommIndex]->stSpectrometerPara.iPixelNumber = iTemp;
-
+		//读取电路板信息 新板子为1
 		iTemp = (int)pbTemp[4 + NVPA_PIXELS_TYPE_ADDR];
 		apCommParaST[CommIndex]->stSpectrometerPara.iPixelType = iTemp;
+
+		//读取电路板信息 像素点先后 后为1
+		iTemp = (int)pbTemp[4 + NVPA_PIXELS_POS_ADDR];
+		apCommParaST[CommIndex]->stSpectrometerPara.iPosType = iTemp;
 
 		//读取波长系数
 		for(i = 0; i < 4; i++)
@@ -925,15 +929,14 @@ void SA_CloseSpectrometers(void)
 /***************************** 光谱仪参数设置接口****************************************/
 /****************************************************************************************/
 /****************************************************************************************/
-int SA_SetMultiChannelIntegrationTime0 (int spectrometerIndex, int *usec, int usec_num)
+int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec)
 {
 	BYTE bTemp[64];
 	unsigned long ulTemp = 0;
 	int i = 0;
-	
-	
+		
 	if(spectrometerIndex > g_iCommIndex)
-	{	
+	{
 		return SA_API_FAIL;
 	}
 
@@ -942,16 +945,10 @@ int SA_SetMultiChannelIntegrationTime0 (int spectrometerIndex, int *usec, int us
 		if(usec[i] < apCommParaST[spectrometerIndex]->stSpectrometerPara.iMinIntegrationTimeUS ||
 		   usec[i] > apCommParaST[spectrometerIndex]->stSpectrometerPara.iMaxIntegrationTimeUS)
 		{
-			return SA_API_FAIL;
+			usec[i] = apCommParaST[spectrometerIndex]->stSpectrometerPara.iMinIntegrationTimeUS;
 		}
-	}
+		ulTemp = (unsigned long)(usec[i]);
 
-	for(i = 0; i < CHL_NUM; i++)
-	{
-		if(i < usec_num)
-			ulTemp = (unsigned long)(usec[i]);
-		else
-			ulTemp = 0;
 		bTemp[0 + (i * 4)] = (BYTE)(ulTemp >> 24 & 0x000000ff);
 		bTemp[1 + (i * 4)] = (BYTE)(ulTemp >> 16 & 0x000000ff);
 		bTemp[2 + (i * 4)] = (BYTE)(ulTemp >> 8 & 0x000000ff);
@@ -976,11 +973,71 @@ int SA_SetMultiChannelIntegrationTime0 (int spectrometerIndex, int *usec, int us
 	return SA_API_SUCCESS;
 }
 
-int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec)
+
+int SA_SetRGBModeIntegrationTime (int spectrometerIndex, int *usec, int usec_num)
 {
-	return SA_SetMultiChannelIntegrationTime0(spectrometerIndex, usec, 16);
+	BYTE bTemp[64];
+	unsigned long ulTemp = 0;
+	int i = 0;
+	
+	
+	if(spectrometerIndex > g_iCommIndex)
+	{
+		return SA_API_FAIL;
+	}
+
+	for(i = 0; i < 3; i++)
+	{
+		if(usec[i] < apCommParaST[spectrometerIndex]->stSpectrometerPara.iMinIntegrationTimeUS ||
+		   usec[i] > apCommParaST[spectrometerIndex]->stSpectrometerPara.iMaxIntegrationTimeUS)
+		{
+			usec[i] = apCommParaST[spectrometerIndex]->stSpectrometerPara.iMinIntegrationTimeUS;
+		}
+	}
+
+	for(i = 0; i < 3; i++)
+	{
+		if(i < usec_num)
+			ulTemp = (unsigned long)(usec[i]);
+		else
+			ulTemp = 0;
+		bTemp[0 + (i * 4)] = (BYTE)(ulTemp >> 24 & 0x000000ff);
+		bTemp[1 + (i * 4)] = (BYTE)(ulTemp >> 16 & 0x000000ff);
+		bTemp[2 + (i * 4)] = (BYTE)(ulTemp >> 8 & 0x000000ff);
+		bTemp[3 + (i * 4)] = (BYTE)(ulTemp & 0x000000ff);
+
+		apCommParaST[spectrometerIndex]->stSpectrometerPara.iChannelIntegrationTime[i] = usec[i];
+	}
+
+
+	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], VPA, 112, 12, bTemp, MIGP_ACK_RX_ENABLE) == FALSE)
+	{
+		return SA_API_FAIL;
+	}
+	
+	return SA_API_SUCCESS;
 }
 
+int SA_SetPosType(int spectrometerIndex, int iPos)
+{
+		
+	if(spectrometerIndex > g_iCommIndex)
+	{	
+		return SA_API_FAIL;
+	}
+
+	BYTE bTemp[1];
+	bTemp[0] = iPos;
+
+	if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], NVPA, NVPA_PIXELS_POS_ADDR, 1, bTemp, MIGP_ACK_RX_ENABLE) == FALSE)
+	{
+		return SA_API_FAIL;
+	}
+	
+	apCommParaST[spectrometerIndex]->stSpectrometerPara.iPosType = iPos;
+
+	return SA_API_SUCCESS;
+}
 
 
 int SA_SetIntegrationTime (int spectrometerIndex, int usec)
@@ -1071,15 +1128,13 @@ int SA_SetAverageTimes(int spectrometerIndex, int AverageTimes)
 	 {
 	 	 case SOFTWARE_SYNCHRONOUS:
 		 	 bTemp[0] = 0x00;
-			 apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode = SOFTWARE_SYNCHRONOUS;
+			 
 			 break;
 		case SOFTWARE_ASYNCHRONOUS:
 		 	 bTemp[0] = 0x02;
-			 apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode = SOFTWARE_ASYNCHRONOUS;
 			 break;
 		case CACHE_ASYNCHRONOUS:
 		 	 bTemp[0] = 0x03;
-			 apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode = CACHE_ASYNCHRONOUS;
 			 break;
 		 case EXINT_RISING_EDGE:
 			 bTemp[0] = 0x04;
@@ -1093,9 +1148,17 @@ int SA_SetAverageTimes(int spectrometerIndex, int AverageTimes)
 		 case EXINT_LOW_LEVEL:
 			 bTemp[0] = 0x09;
 			 break;
+		 case EXINT_RGB_RISING_EDGE:
+			 bTemp[0] = 0x0A;
+			 break;
+		 case EXINT_RGB_FALLING_EDGE:
+			 bTemp[0] = 0x0B;
+			 break;
 		 default:
 			 return SA_API_FAIL;
 	 }
+
+	 apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode = TriggerMode;
  
 	 if(MIGP_RegArea_Write(apCommParaST[spectrometerIndex], VPA, 0x0000, 1, bTemp, MIGP_ACK_RX_ENABLE) == FALSE)
 	 {
@@ -1111,6 +1174,32 @@ int SA_SetAverageTimes(int spectrometerIndex, int AverageTimes)
 	 return SA_API_SUCCESS;
 
  }
+
+ /* 上升沿触发启动操作接口 */
+int SA_StartRETrigger(int spectrometerIndex)
+{
+	return SA_SetSpectumTriggerMode(spectrometerIndex, EXINT_RISING_EDGE);
+}
+
+/*  下降沿触发启动操作接口 */
+int SA_StartFETrigger(int spectrometerIndex)
+{
+	return SA_SetSpectumTriggerMode(spectrometerIndex, EXINT_FALLING_EDGE);
+}
+
+/* RGB上升沿触发启动操作接口 */
+int SA_StartRBGModeRETrigger(int spectrometerIndex)
+{
+	return SA_SetSpectumTriggerMode(spectrometerIndex, EXINT_RGB_RISING_EDGE);
+}
+
+
+/*  RGB下降沿触发启动操作接口 */
+int SA_StartRBGModeFETrigger(int spectrometerIndex)
+{
+	return SA_SetSpectumTriggerMode(spectrometerIndex, EXINT_RGB_FALLING_EDGE);
+}
+
 
  /****************************************************************************************/
 /****************************************************************************************/
@@ -1304,6 +1393,14 @@ int SA_GetWavelength(int spectrometerIndex, double *pdWavelengthData, int &pSpec
 			}
 			else
 			{
+							if(dCalib[0] < 0 || dCalib[0] > 1500)
+				{
+					dCalib[0] = 0;
+					dCalib[1] = 0;
+					dCalib[2] = 0;
+					dCalib[3] = 0;
+				}
+
 				for(i = 0; i < 2048; i++)
 				{
 					double fWL = dCalib[0] + (dCalib[1] * i) + (dCalib[2] * i * i) + (dCalib[3] * i * i * i);
@@ -1318,7 +1415,22 @@ int SA_GetWavelength(int spectrometerIndex, double *pdWavelengthData, int &pSpec
 			}
 		}
 		else
-			return SA_API_FAIL;
+		{
+				if(dCalib[0] < 0 || dCalib[0] > 1500)
+				{
+					dCalib[0] = 0;
+					dCalib[1] = 0;
+					dCalib[2] = 0;
+					dCalib[3] = 0;
+				}
+			for(i = 0; i < 2048; i++)
+			{
+				double fWL = dCalib[0] + (dCalib[1] * i) + (dCalib[2] * i * i) + (dCalib[3] * i * i * i);
+
+				g_dPixWL_New[i] = fWL;
+				pdWavelengthData[i] = fWL;
+ 			}
+		}
 	}
 	else
 	{
@@ -1346,6 +1458,13 @@ int SA_GetWavelength(int spectrometerIndex, double *pdWavelengthData, int &pSpec
 			}
 			else
 			{
+				if(dCalib[0] < 0 || dCalib[0] > 1500)
+				{
+					dCalib[0] = 0;
+					dCalib[1] = 0;
+					dCalib[2] = 0;
+					dCalib[3] = 0;
+				}
 				for(i = 0; i < 2048; i++)
 				{
 					double fWL = dCalib[0] + (dCalib[1] * i) + (dCalib[2] * i * i) + (dCalib[3] * i * i * i);
@@ -1354,6 +1473,23 @@ int SA_GetWavelength(int spectrometerIndex, double *pdWavelengthData, int &pSpec
 					pdWavelengthData[i] = fWL;
  				} 			
 			}
+		}
+		else
+		{
+				if(dCalib[0] < 0 || dCalib[0] > 1500)
+				{
+					dCalib[0] = 0;
+					dCalib[1] = 0;
+					dCalib[2] = 0;
+					dCalib[3] = 0;
+				}
+			for(i = 0; i < 2048; i++)
+			{
+				double fWL = dCalib[0] + (dCalib[1] * i) + (dCalib[2] * i * i) + (dCalib[3] * i * i * i);
+
+				g_dPixWL_New[i] = fWL;
+				pdWavelengthData[i] = fWL;
+ 			} 			
 		}
 		
 	}
@@ -1402,8 +1538,18 @@ int SA_ScanStartCacheAsyncTrigger(int spectrometerIndex, int iCacheChannelNum)
 
 }
 
+int SA_GetSpectumRBGModeRETrigger(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber, int iCacheChannelNum)
+{
+	return SA_GetCacheAsyncSpectum(spectrometerIndex, pdSpectumData, pSpectumNumber, iCacheChannelNum);
+}
 
-int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber, int iCacheChannelNum)
+int SA_GetSpectumRBGModeFETrigger(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber, int iCacheChannelNum)
+{
+	return SA_GetCacheAsyncSpectum(spectrometerIndex, pdSpectumData, pSpectumNumber, iCacheChannelNum);
+}
+
+
+int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber, int iCacheChannelNum)
 {
 	BYTE *pbTemp;
 	int i = 0;
@@ -1424,6 +1570,7 @@ int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int *p
 
 	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != CACHE_ASYNCHRONOUS)
 	{
+	MessageBox(NULL,TEXT("BBB"),TEXT("YES"),MB_OK);
 		return SA_API_FAIL;
 	}
 		
@@ -1447,28 +1594,173 @@ int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int *p
 
 	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], MDA, iCacheChannelNum, (apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber * 2), &pbTemp, iTimeOut) == FALSE)
 	{
+		MessageBox(NULL,TEXT("MIGP_RegArea_Read"),TEXT("YES"),MB_OK);
 		return SA_API_FAIL;
 	}
 
-	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-
-	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 0x01)
-	{	
-		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+	pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
+	if(pSpectumNumber == 1024)
+	{
+	//	MessageBox(NULL,TEXT("1024"),TEXT("YES"),MB_OK);
+		double pTempData[1024];
+		if(!g_bHaveRead)
 		{
-			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2) + 1] * 256) + pbTemp[4 + (i * 2)]);
+			SA_GetWavelength(spectrometerIndex, g_pdWavelengthData, g_pTempSpectumNumber);
+			g_bHaveRead = TRUE;
 		}
-	}else{
-		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-		{
-			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
-		}	
-	}
-//	for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-//	{
-//		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
-//	}
 
+		int iTempAD;
+		for(i = 0; i < 1024; i++)
+		{			
+			if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 1)
+			{
+				iTempAD = pbTemp[4 + (i * 2)] + pbTemp[4 + (i * 2) + 1] * 256;//高位在后 新
+				if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPosType == 1)
+					pTempData[pSpectumNumber-1-i] = iTempAD;//反
+				else
+					pTempData[i] = iTempAD;//反
+			}
+			else
+			{
+				iTempAD = pbTemp[4 + (i * 2)] * 256 + pbTemp[4 + (i * 2) + 1];//高位在前 老
+				pTempData[i] = iTempAD;//正
+			}
+		}
+		pSpectumNumber = 2048;//apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
+		int iPerStart = 1;
+		int m, k;
+		float u;
+		k=1;
+		for(i = 0; i < 2048; i++)
+ 		{
+ 			if (1)
+			{
+				for(m = iPerStart; m <= 1024-2; m++)
+				{
+					if( g_dPixWL_New[i] <= g_dPixWL_Per[m] )
+					{
+						k=m;
+						break;
+					}
+					else
+						k=1024-1;
+				}
+				iPerStart = k;
+				if ((g_dPixWL_Per[k]-g_dPixWL_Per[k-1]) != 0)
+				{
+					u=(float)((g_dPixWL_New[i]-g_dPixWL_Per[k-1])/(g_dPixWL_Per[k]-g_dPixWL_Per[k-1]));
+				}
+				else
+				{
+					u = 0;
+				}
+				pdSpectumData[i] = pTempData[k-1]+u*(pTempData[k]-pTempData[k-1]);
+			}
+
+ 		}
+		u=(float)((g_dPixWL_New[2047]-g_dPixWL_Per[1023])/(g_dPixWL_Per[1023]-g_dPixWL_Per[1022]));
+		pdSpectumData[2047] = pTempData[1023]+u*(pTempData[1023]-pTempData[1022]);
+	}
+	else
+	{
+		int iTempAD;
+		for(i = 0; i < pSpectumNumber; i++)
+		{
+			if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 1)
+			{
+				iTempAD = pbTemp[4 + (i * 2)] + pbTemp[4 + (i * 2) + 1] * 256;//高位在后 新
+				if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPosType == 1)
+					pdSpectumData[pSpectumNumber-1-i] = iTempAD;//反
+				else
+					pdSpectumData[i] = iTempAD;//反
+			}
+			else
+			{
+				pdSpectumData[i] = pbTemp[4 + (i * 2)] * 256 + pbTemp[4 + (i * 2) + 1];//高位在前 老
+			}
+		}
+	}
+
+	if(g_bUseFFT)
+	{
+ //	MessageBox(NULL,TEXT("AAA"),TEXT("YES"),MB_OK);
+		FFT_Filter(pdSpectumData, 2048);
+	}
+
+	if(g_bNeedMod)
+	{
+//	MessageBox(NULL,TEXT("BBB"),TEXT("YES"),MB_OK);
+		for(i = 0; i < 2048; i++)
+		{
+			//当前数据
+			g_fPerSpec[g_iHadNum%g_iNeedNum][i] = pdSpectumData[i];
+		}
+
+		g_bHadData[g_iHadNum%g_iNeedNum] = TRUE;
+
+		g_iHadNum++;
+		if(g_iHadNum > g_iNeedNum)
+		{
+			g_iHadNum = 0;
+		}
+
+		double fSpecA=0; //总和
+		double fMaxA = pdSpectumData[0];
+		int iMaxA = 0;
+		for(i = 0; i < 2048; i++)
+		{
+			fSpecA = fSpecA + pdSpectumData[i];
+			if(fMaxA < pdSpectumData[i])
+			{
+				fMaxA = pdSpectumData[i];
+				iMaxA = i;
+			}
+		}
+		int iNumAve = 0;
+		float fSum[2048];
+		for(i = 0; i < 2048; i++)
+			fSum[i] = 0;
+
+		for(int j = 0; j < g_iNeedNum; j++)
+		{
+			//比较相似度
+			double fSpecD=0; //差值
+			if(g_bHadData[j])
+			{
+				double fMaxD = g_fPerSpec[j][0];
+				int iMaxD = 0;
+				for(i = 0; i < 2048; i++)
+				{
+					fSpecD = fSpecD + g_fPerSpec[j][i];
+					if(fMaxD < g_fPerSpec[j][i])
+					{
+						fMaxD = g_fPerSpec[j][i];
+						iMaxD = i;
+					}
+				}
+				if(fSpecA!=0)
+				{
+					if((abs(iMaxD - iMaxA) < 8 && fMaxA > 2500)
+					|| fMaxA < 2500) //判断峰值
+					{
+						if(fabs((fSpecD - fSpecA) / fSpecA) <= g_fValue)
+						{
+							for(i = 0; i < 2048; i++)
+								fSum[i] = (float)((g_fPerSpec[j][i] + fSum[i]));
+					
+							iNumAve++;
+						}
+					}
+				}
+			}
+			
+		}
+			if(iNumAve >0)
+			{
+				for(i = 0; i < 2048; i++)
+					pdSpectumData[i] = (float)((fSum[i]/iNumAve));
+			}
+	}
 
 
 	
@@ -1551,7 +1843,7 @@ int SA_GetStateAsyncSoftTrigger(int spectrometerIndex, int *pState)
 		return SA_API_FAIL;
 	}
 	
-	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], VPA, VPA_ASYN_SCAN_ADDR, 1, &pbTemp, 50) == FALSE)
+	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], VPA, VPA_ASYN_SCAN_ADDR, 1, &pbTemp, 1000) == FALSE)
 	{
 		return SA_API_FAIL;
 	}
@@ -1562,55 +1854,15 @@ int SA_GetStateAsyncSoftTrigger(int spectrometerIndex, int *pState)
 
 }
 
-#if 0
-void SA_AverageProcess(double* datavalue, int datalen, int IntaverageWidth)
+int SA_GetStateMultiChannelAsyncSoftTrigger(int spectrometerIndex, int *pState)
 {
-	int i = 0;
-	double tmp[10000];
-	int win_left = 0;
-	int win_num = 0;
-	int win_index = 0;
-	int index = 0;
-
-	//计算窗口启使偏移
-	win_left = 0 - IntaverageWidth / 2;
-
-	//循环每个值
-	for (i = 0; i < datalen; i++) 
-	{
-		//初值赋0
-		tmp[i] = 0;
-
-		//实际窗内长度
-		win_num = 0;
-		//循环一个窗口的长度
-		for (win_index = 0; win_index < IntaverageWidth; win_index++) 
-		{
-			//计算窗口对应原始数据的坐标
-			index = i + win_left + win_index;
-
-			//如果窗口对应原始数据的坐标，在原始数组范围内，累加
-			if (index >= 0 && index < datalen) 
-			{
-				tmp[i] += datavalue[index];
-				win_num++;
-			}
-		}
-		//取平均
-		tmp[i] /= win_num;
-	}
-
-	//循环每个值,赋值回原始数据
-	for (i = 0; i < datalen; i++) 
-	{
-		datavalue[i] = tmp[i];
-	}
-
-
+	return SA_GetStateAsyncSoftTrigger(spectrometerIndex, pState);
 }
-#endif
 
-
+int SA_GetStateCacheAsyncTrigger(int spectrometerIndex, int *pState)
+{
+	return SA_GetStateAsyncSoftTrigger(spectrometerIndex, pState);
+}
 
 /************************************************************/
 /************************************************************/
@@ -1638,27 +1890,27 @@ int SA_UseFFTFilter(BOOL bUseFFT,float fValue)
 	return SA_API_SUCCESS;
 }
 
+
+
 int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber)
 {
 	BYTE *pbTemp;
 	int i = 0;
 	int iTimeOut;
-	//HANDLE CommDev;
-
-	if(!g_bHaveRead)
-	{
-		SA_GetWavelength(spectrometerIndex, g_pdWavelengthData, g_pTempSpectumNumber);
-		g_bHaveRead = TRUE;
-	}
 
 	if(spectrometerIndex > g_iCommIndex)
 	{	
 		return SA_API_FAIL;
 	}
 
-	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != SOFTWARE_SYNCHRONOUS && 
-	   apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != SOFTWARE_AUTO
-	    && apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != SOFTWARE_ASYNCHRONOUS)
+	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != SOFTWARE_SYNCHRONOUS
+	   && apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != SOFTWARE_AUTO
+	   && apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != SOFTWARE_ASYNCHRONOUS
+	   && apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != CACHE_ASYNCHRONOUS
+	   && apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != EXINT_RISING_EDGE
+	   && apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != EXINT_FALLING_EDGE
+	   && apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != EXINT_RGB_RISING_EDGE
+	   && apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != EXINT_RGB_FALLING_EDGE)
 	{
 		return SA_API_FAIL;
 	}
@@ -1682,14 +1934,24 @@ int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNum
 	pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
 	if(pSpectumNumber == 1024)
 	{
+	//	MessageBox(NULL,TEXT("1024"),TEXT("YES"),MB_OK);
 		double pTempData[1024];
+		if(!g_bHaveRead)
+		{
+			SA_GetWavelength(spectrometerIndex, g_pdWavelengthData, g_pTempSpectumNumber);
+			g_bHaveRead = TRUE;
+		}
+
 		int iTempAD;
 		for(i = 0; i < 1024; i++)
 		{			
 			if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 1)
 			{
 				iTempAD = pbTemp[4 + (i * 2)] + pbTemp[4 + (i * 2) + 1] * 256;//高位在后 新
-				pTempData[pSpectumNumber-1-i] = iTempAD;//反
+				if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPosType == 1)
+					pTempData[pSpectumNumber-1-i] = iTempAD;//反
+				else
+					pTempData[i] = iTempAD;//反
 			}
 			else
 			{
@@ -1740,12 +2002,14 @@ int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNum
 			if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 1)
 			{
 				iTempAD = pbTemp[4 + (i * 2)] + pbTemp[4 + (i * 2) + 1] * 256;//高位在后 新
-				pdSpectumData[pSpectumNumber-1-i] = iTempAD;//反
+				if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPosType == 1)
+					pdSpectumData[pSpectumNumber-1-i] = iTempAD;//反
+				else
+					pdSpectumData[i] = iTempAD;//反
 			}
 			else
 			{
-				iTempAD = pbTemp[4 + (i * 2)] * 256 + pbTemp[4 + (i * 2) + 1];//高位在前 老
-				pdSpectumData[i] = iTempAD;//正
+				pdSpectumData[i] = pbTemp[4 + (i * 2)] * 256 + pbTemp[4 + (i * 2) + 1];//高位在前 老
 			}
 		}
 	}
@@ -1822,17 +2086,38 @@ int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNum
 					}
 				}
 			}
+			
+		}
 			if(iNumAve >0)
 			{
 				for(i = 0; i < 2048; i++)
 					pdSpectumData[i] = (float)((fSum[i]/iNumAve));
 			}
-		}
-
 	}
 
 	return SA_API_SUCCESS;
 }
+
+int SA_GetAsyncSoftSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber)
+{
+	return SA_GetSpectum(spectrometerIndex, pdSpectumData, pSpectumNumber);
+}
+
+int SA_GetMultiChannelAsyncSoftSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber)
+{
+	return SA_GetSpectum(spectrometerIndex, pdSpectumData, pSpectumNumber);
+}
+
+int SA_GetSpectumRETrigger(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber)
+{
+	return SA_GetSpectum(spectrometerIndex, pdSpectumData, pSpectumNumber);
+}
+
+int SA_GetSpectumFETrigger(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber)
+{
+	return SA_GetSpectum(spectrometerIndex, pdSpectumData, pSpectumNumber);
+}
+
 /************************************************************/
 /************************************************************/
 /*************** 光谱仪自动积分操作接口 *********************/
@@ -1846,10 +2131,8 @@ int SA_GetSpectumAutoIntegrationTime(int spectrometerIndex, double *pdSpectumDat
 	int iTimeOut;
 	BYTE bTemp[4];
 	unsigned long ulTemp = 0;
-	
 
 	//HANDLE CommDev;
-
 		
 	if(spectrometerIndex > g_iCommIndex)
 	{	
@@ -1898,12 +2181,20 @@ int SA_GetSpectumAutoIntegrationTime(int spectrometerIndex, double *pdSpectumDat
 
 	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
 	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 0x01)
-	{	
+	{
+		double iTempAD;
 		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
 		{
-			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2) + 1] * 256) + pbTemp[4 + (i * 2)]);
+			iTempAD = (double)((double)pbTemp[4 + (i * 2)] + pbTemp[4 + (i * 2) + 1] * 256);//高位在后 新
+			if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPosType == 1)
+				pdSpectumData[*pSpectumNumber-1-i] = iTempAD;//反
+			else
+				pdSpectumData[i] = iTempAD;//反
+
 		}
-	}else{
+	}
+	else
+	{
 		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
 		{
 			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
@@ -1972,11 +2263,18 @@ int SA_GetMultiChannelSpectum(int spectrometerIndex, double *pdSpectumData, int 
 
 	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 0x01)
 	{	
+		int iTempAD;
 		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
 		{
-			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2) + 1] * 256) + pbTemp[4 + (i * 2)]);
+			iTempAD = pbTemp[4 + (i * 2)] + pbTemp[4 + (i * 2) + 1] * 256;//高位在后 新
+			if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPosType == 1)
+				pdSpectumData[*pSpectumNumber-1-i] = iTempAD;//反
+			else
+				pdSpectumData[i] = iTempAD;//反
 		}
-	}else{
+	}
+	else
+	{
 		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
 		{
 			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
@@ -1995,51 +2293,377 @@ int SA_GetMultiChannelSpectum(int spectrometerIndex, double *pdSpectumData, int 
 
 
 
-int SA_GetSpectumHWTrigger(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber, int iTimeOut, TRIGGER_MODE TriggerMode)
+int SA_GetSpectumHLTrigger(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber, int iTimeOut)
 {
 	BYTE *pbTemp;
 	int i = 0;
-
-	//double dADTemp[2048];
-	//double dAD[2048];
-		
-	if(spectrometerIndex > g_iCommIndex)
-	{	
-//		printf_debug("SA_GetSpectumForHWTrigger FAIL");
+	int ret = 0;
+	
+	if(SA_SetSpectumTriggerMode(spectrometerIndex, EXINT_HIGH_LEVEL) == SA_API_FAIL)
+	{
 		return SA_API_FAIL;
 	}
 
+	/*获取光谱*/
 	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], MDA, 0x0000, (apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber * 2), &pbTemp, iTimeOut) == FALSE)
 	{
 		return SA_API_FAIL;
 	}
 
-#if 1
-	*pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 0x01)
-	{	
-		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
+	pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
+	if(pSpectumNumber == 1024)
+	{
+	//	MessageBox(NULL,TEXT("1024"),TEXT("YES"),MB_OK);
+		double pTempData[1024];
+		if(!g_bHaveRead)
 		{
-			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2) + 1] * 256) + pbTemp[4 + (i * 2)]);
+			SA_GetWavelength(spectrometerIndex, g_pdWavelengthData, g_pTempSpectumNumber);
+			g_bHaveRead = TRUE;
 		}
-	}else{
-		for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-		{
-			pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
-		}	
-	}
-	//for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-	//{
-///		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
-//	}
 
-#endif
+		int iTempAD;
+		for(i = 0; i < 1024; i++)
+		{			
+			if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 1)
+			{
+				iTempAD = pbTemp[4 + (i * 2)] + pbTemp[4 + (i * 2) + 1] * 256;//高位在后 新
+				if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPosType == 1)
+					pdSpectumData[pSpectumNumber-1-i] = iTempAD;//反
+				else
+					pdSpectumData[i] = iTempAD;//反
+			}
+			else
+			{
+				iTempAD = pbTemp[4 + (i * 2)] * 256 + pbTemp[4 + (i * 2) + 1];//高位在前 老
+				pTempData[i] = iTempAD;//正
+			}
+		}
+		pSpectumNumber = 2048;//apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
+		int iPerStart = 1;
+		int m, k;
+		float u;
+		k=1;
+		for(i = 0; i < 2048; i++)
+ 		{
+ 			if (1)
+			{
+				for(m = iPerStart; m <= 1024-2; m++)
+				{
+					if( g_dPixWL_New[i] <= g_dPixWL_Per[m] )
+					{
+						k=m;
+						break;
+					}
+					else
+						k=1024-1;
+				}
+				iPerStart = k;
+				if ((g_dPixWL_Per[k]-g_dPixWL_Per[k-1]) != 0)
+				{
+					u=(float)((g_dPixWL_New[i]-g_dPixWL_Per[k-1])/(g_dPixWL_Per[k]-g_dPixWL_Per[k-1]));
+				}
+				else
+				{
+					u = 0;
+				}
+				pdSpectumData[i] = pTempData[k-1]+u*(pTempData[k]-pTempData[k-1]);
+			}
+
+ 		}
+		u=(float)((g_dPixWL_New[2047]-g_dPixWL_Per[1023])/(g_dPixWL_Per[1023]-g_dPixWL_Per[1022]));
+		pdSpectumData[2047] = pTempData[1023]+u*(pTempData[1023]-pTempData[1022]);
+	}
+	else
+	{
+		double iTempAD;
+		for(i = 0; i < pSpectumNumber; i++)
+		{
+			if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 1)
+			{
+				iTempAD = pbTemp[4 + (i * 2)] + pbTemp[4 + (i * 2) + 1] * 256;//高位在后 新
+				if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPosType == 1)
+					pdSpectumData[pSpectumNumber-1-i] = iTempAD;//反
+				else
+					pdSpectumData[i] = iTempAD;//反
+			}
+			else
+			{
+				pdSpectumData[i] = pbTemp[4 + (i * 2)] * 256 + pbTemp[4 + (i * 2) + 1];//高位在前 老
+			}
+		}
+	}
+
+	if(g_bUseFFT)
+	{
+ //	MessageBox(NULL,TEXT("AAA"),TEXT("YES"),MB_OK);
+		FFT_Filter(pdSpectumData, 2048);
+	}
+
+	if(g_bNeedMod)
+	{
+//	MessageBox(NULL,TEXT("BBB"),TEXT("YES"),MB_OK);
+		for(i = 0; i < 2048; i++)
+		{
+			//当前数据
+			g_fPerSpec[g_iHadNum%g_iNeedNum][i] = pdSpectumData[i];
+		}
+
+		g_bHadData[g_iHadNum%g_iNeedNum] = TRUE;
+
+		g_iHadNum++;
+		if(g_iHadNum > g_iNeedNum)
+		{
+			g_iHadNum = 0;
+		}
+
+		double fSpecA=0; //总和
+		double fMaxA = pdSpectumData[0];
+		int iMaxA = 0;
+		for(i = 0; i < 2048; i++)
+		{
+			fSpecA = fSpecA + pdSpectumData[i];
+			if(fMaxA < pdSpectumData[i])
+			{
+				fMaxA = pdSpectumData[i];
+				iMaxA = i;
+			}
+		}
+		int iNumAve = 0;
+		float fSum[2048];
+		for(i = 0; i < 2048; i++)
+			fSum[i] = 0;
+
+		for(int j = 0; j < g_iNeedNum; j++)
+		{
+			//比较相似度
+			double fSpecD=0; //差值
+			if(g_bHadData[j])
+			{
+				double fMaxD = g_fPerSpec[j][0];
+				int iMaxD = 0;
+				for(i = 0; i < 2048; i++)
+				{
+					fSpecD = fSpecD + g_fPerSpec[j][i];
+					if(fMaxD < g_fPerSpec[j][i])
+					{
+						fMaxD = g_fPerSpec[j][i];
+						iMaxD = i;
+					}
+				}
+				if(fSpecA!=0)
+				{
+					if((abs(iMaxD - iMaxA) < 8 && fMaxA > 2500)
+					|| fMaxA < 2500) //判断峰值
+					{
+						if(fabs((fSpecD - fSpecA) / fSpecA) <= g_fValue)
+						{
+							for(i = 0; i < 2048; i++)
+								fSum[i] = (float)((g_fPerSpec[j][i] + fSum[i]));
+					
+							iNumAve++;
+						}
+					}
+				}
+			}
+			
+		}
+			if(iNumAve >0)
+			{
+				for(i = 0; i < 2048; i++)
+					pdSpectumData[i] = (float)((fSum[i]/iNumAve));
+			}
+	}
 
 	apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode = (BYTE)SOFTWARE_SYNCHRONOUS;
 	
 	return SA_API_SUCCESS;
 }
 
+int SA_GetSpectumLLTrigger(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber, int iTimeOut)
+{
+	BYTE *pbTemp;
+	int i = 0;
+	int ret = 0;
+	
+	if(SA_SetSpectumTriggerMode(spectrometerIndex, EXINT_LOW_LEVEL) == SA_API_FAIL)
+	{
+		return SA_API_FAIL;
+	}
+
+	/*获取光谱*/
+	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], MDA, 0x0000, (apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber * 2), &pbTemp, iTimeOut) == FALSE)
+	{
+		return SA_API_FAIL;
+	}
+
+	pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
+	if(pSpectumNumber == 1024)
+	{
+	//	MessageBox(NULL,TEXT("1024"),TEXT("YES"),MB_OK);
+		double pTempData[1024];
+		if(!g_bHaveRead)
+		{
+			SA_GetWavelength(spectrometerIndex, g_pdWavelengthData, g_pTempSpectumNumber);
+			g_bHaveRead = TRUE;
+		}
+
+		int iTempAD;
+		for(i = 0; i < 1024; i++)
+		{			
+			if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 1)
+			{
+				iTempAD = pbTemp[4 + (i * 2)] + pbTemp[4 + (i * 2) + 1] * 256;//高位在后 新
+				if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPosType == 1)
+					pTempData[pSpectumNumber-1-i] = iTempAD;//反
+				else
+					pTempData[i] = iTempAD;//反
+			}
+			else
+			{
+				iTempAD = pbTemp[4 + (i * 2)] * 256 + pbTemp[4 + (i * 2) + 1];//高位在前 老
+				pTempData[i] = iTempAD;//正
+			}
+		}
+		pSpectumNumber = 2048;//apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
+		int iPerStart = 1;
+		int m, k;
+		float u;
+		k=1;
+		for(i = 0; i < 2048; i++)
+ 		{
+ 			if (1)
+			{
+				for(m = iPerStart; m <= 1024-2; m++)
+				{
+					if( g_dPixWL_New[i] <= g_dPixWL_Per[m] )
+					{
+						k=m;
+						break;
+					}
+					else
+						k=1024-1;
+				}
+				iPerStart = k;
+				if ((g_dPixWL_Per[k]-g_dPixWL_Per[k-1]) != 0)
+				{
+					u=(float)((g_dPixWL_New[i]-g_dPixWL_Per[k-1])/(g_dPixWL_Per[k]-g_dPixWL_Per[k-1]));
+				}
+				else
+				{
+					u = 0;
+				}
+				pdSpectumData[i] = pTempData[k-1]+u*(pTempData[k]-pTempData[k-1]);
+			}
+
+ 		}
+		u=(float)((g_dPixWL_New[2047]-g_dPixWL_Per[1023])/(g_dPixWL_Per[1023]-g_dPixWL_Per[1022]));
+		pdSpectumData[2047] = pTempData[1023]+u*(pTempData[1023]-pTempData[1022]);
+	}
+	else
+	{
+		double iTempAD;
+		for(i = 0; i < pSpectumNumber; i++)
+		{
+			if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelType == 1)
+			{
+				iTempAD = pbTemp[4 + (i * 2)] + pbTemp[4 + (i * 2) + 1] * 256;//高位在后 新
+				if(apCommParaST[spectrometerIndex]->stSpectrometerPara.iPosType == 1)
+					pdSpectumData[pSpectumNumber-1-i] = iTempAD;//反
+				else
+					pdSpectumData[i] = iTempAD;//反
+			}
+			else
+			{
+				pdSpectumData[i] = pbTemp[4 + (i * 2)] * 256 + pbTemp[4 + (i * 2) + 1];//高位在前 老
+			}
+		}
+	}
+
+	if(g_bUseFFT)
+	{
+ //	MessageBox(NULL,TEXT("AAA"),TEXT("YES"),MB_OK);
+		FFT_Filter(pdSpectumData, 2048);
+	}
+
+	if(g_bNeedMod)
+	{
+//	MessageBox(NULL,TEXT("BBB"),TEXT("YES"),MB_OK);
+		for(i = 0; i < 2048; i++)
+		{
+			//当前数据
+			g_fPerSpec[g_iHadNum%g_iNeedNum][i] = pdSpectumData[i];
+		}
+
+		g_bHadData[g_iHadNum%g_iNeedNum] = TRUE;
+
+		g_iHadNum++;
+		if(g_iHadNum > g_iNeedNum)
+		{
+			g_iHadNum = 0;
+		}
+
+		double fSpecA=0; //总和
+		double fMaxA = pdSpectumData[0];
+		int iMaxA = 0;
+		for(i = 0; i < 2048; i++)
+		{
+			fSpecA = fSpecA + pdSpectumData[i];
+			if(fMaxA < pdSpectumData[i])
+			{
+				fMaxA = pdSpectumData[i];
+				iMaxA = i;
+			}
+		}
+		int iNumAve = 0;
+		float fSum[2048];
+		for(i = 0; i < 2048; i++)
+			fSum[i] = 0;
+
+		for(int j = 0; j < g_iNeedNum; j++)
+		{
+			//比较相似度
+			double fSpecD=0; //差值
+			if(g_bHadData[j])
+			{
+				double fMaxD = g_fPerSpec[j][0];
+				int iMaxD = 0;
+				for(i = 0; i < 2048; i++)
+				{
+					fSpecD = fSpecD + g_fPerSpec[j][i];
+					if(fMaxD < g_fPerSpec[j][i])
+					{
+						fMaxD = g_fPerSpec[j][i];
+						iMaxD = i;
+					}
+				}
+				if(fSpecA!=0)
+				{
+					if((abs(iMaxD - iMaxA) < 8 && fMaxA > 2500)
+					|| fMaxA < 2500) //判断峰值
+					{
+						if(fabs((fSpecD - fSpecA) / fSpecA) <= g_fValue)
+						{
+							for(i = 0; i < 2048; i++)
+								fSum[i] = (float)((g_fPerSpec[j][i] + fSum[i]));
+					
+							iNumAve++;
+						}
+					}
+				}
+			}
+			
+		}
+			if(iNumAve >0)
+			{
+				for(i = 0; i < 2048; i++)
+					pdSpectumData[i] = (float)((fSum[i]/iNumAve));
+			}
+	}
+
+	apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode = (BYTE)SOFTWARE_SYNCHRONOUS;
+	
+	return SA_API_SUCCESS;
+}
 
 
 /************************************************************/
@@ -2136,7 +2760,14 @@ int SA_GetSpectrometerPixelsNumber (int spectrometerIndex)
 	}
 
 	int pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-	return apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
+	if(pSpectumNumber == 1024)
+	{
+		return 2048;
+	}
+	else
+	{
+		return pSpectumNumber;
+	}
 }
 
 /****************************************************************************************/
