@@ -4,12 +4,18 @@
 #include "stdafx.h"
 
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
-int row_max = 15;
-int column_max = 70;
-char chart [100][50] = {0};
-int y_axis[50] = {0};
-int x_axis[100] = {0};
+const int row_max = 15;//表格最大行数
+const int column_max = 70;//表格最大列数
+char chart [column_max][row_max] = {0};//表格
+int y_axis[row_max] = {0};//y轴
+int x_axis[column_max] = {0};//x轴
 
+
+//*************************************************************
+//  初始化y轴 
+//  min y轴最小值
+//  gap y轴间隔
+//*************************************************************
 void init_yaxis(double min, int gap)
 {
 	for(int i = 0; i < row_max; i++)
@@ -18,9 +24,13 @@ void init_yaxis(double min, int gap)
 	}
 }
 
-void init_xaxis(double x[], int len)
+//*************************************************************
+//  初始化x轴 
+//  x[] x轴值
+//*************************************************************
+void init_xaxis(double x[])
 {
-	for(int i = 0; i < len; i++)
+	for(int i = 0; i < column_max; i++)
 	{
 		x_axis[i] = (int)x[i];
 	}
@@ -28,11 +38,9 @@ void init_xaxis(double x[], int len)
 
 //转换数据 
 void convert_data(double ora_x[], double ora_y[], int ora_len, double x[], int y[], int& len){
-	len = column_max;
-	int x_jump = ora_len / column_max;
 	int i;
 	
-	//寻找最大最小值 
+	//寻找y方向最大最小值 
 	double min = 0;
 	double max = 0;
 	for(i = 0; i < ora_len; i++){
@@ -45,6 +53,8 @@ void convert_data(double ora_x[], double ora_y[], int ora_len, double x[], int y
 	//初始化y轴
 	init_yaxis(min, (int)y_jump);
 	
+	len = column_max;
+	int x_jump = ora_len / column_max;
 	//转换数据
 	int new_index = 0;
 	for(i = 0; i < ora_len;i++){
@@ -55,7 +65,7 @@ void convert_data(double ora_x[], double ora_y[], int ora_len, double x[], int y
 		}
 	}
 	//初始化x轴
-	init_xaxis(x, len);
+	init_xaxis(x);
 }
 
 //初始化空白表格
@@ -91,7 +101,7 @@ void print_axis(int avr_num){
 	for(i = 0; i < column_max; i++)
 	{
 		if(i % lag == 0){
-			printf("%-10d", x_axis[i]);
+			printf("%-10d", x_axis[i]);			
 			i += 10;
 		}else{
 			printf(" ");
