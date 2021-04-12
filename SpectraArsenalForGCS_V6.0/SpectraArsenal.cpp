@@ -518,7 +518,7 @@ BOOL SA_InitSpectrometers(int CommIndex)
 
 		//读取电路板信息 像素点先后 后为1
 		iTemp = (int)pbTemp[4 + NVPA_PIXELS_POS_ADDR];
-		apCommParaST[CommIndex]->stSpectrometerPara.iPosType = 1;
+		apCommParaST[CommIndex]->stSpectrometerPara.iPosType = iTemp;
 
 		//读取波长系数
 		for(i = 0; i < 4; i++)
