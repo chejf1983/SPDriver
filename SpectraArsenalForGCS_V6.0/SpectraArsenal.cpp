@@ -32,7 +32,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     return TRUE;
 }
 
-const char acAPIVersion[] = "V6.01";
+const char acAPIVersion[] = "V6.2a";
 const char acComName[32][14] = 
 {
 	"COM1",
@@ -518,7 +518,7 @@ BOOL SA_InitSpectrometers(int CommIndex)
 
 		//读取电路板信息 像素点先后 后为1
 		iTemp = (int)pbTemp[4 + NVPA_PIXELS_POS_ADDR];
-		apCommParaST[CommIndex]->stSpectrometerPara.iPosType = iTemp;
+		apCommParaST[CommIndex]->stSpectrometerPara.iPosType = 1;
 
 		//读取波长系数
 		for(i = 0; i < 4; i++)
@@ -802,6 +802,11 @@ int SA_OpenSpectrometers(void)
 			}
 		}		
 	}
+
+	int iGetNum = 0;
+	double dGetAD[2048];
+
+	SA_GetSpectum(0, dGetAD, iGetNum);
 
 	return g_iCommIndex;
 }
