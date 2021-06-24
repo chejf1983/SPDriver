@@ -32,7 +32,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     return TRUE;
 }
 
-const char acAPIVersion[] = "V6.2a";
+const char acAPIVersion[] = "V1.00";
 const char acComName[32][14] = 
 {
 	"COM1",
@@ -98,6 +98,9 @@ float *SIN_TAB;//正弦表的存放空间
 float *COS_TAB;//正弦表的存放空间
 int F_N = 0;
 int FFTData_Len = 2048;
+
+BOOL g_bTrig = FALSE;
+int g_iAve = 1;
 
 //////////////////////////////////////////////////////////////////////////////////////////
 ////////滤波
@@ -430,6 +433,7 @@ BOOL SA_InitSpectrometers(int CommIndex)
 	for(i = 0; i < 3; i++)
 	{
 		//读取EIA数据
+		Sleep(10);
 		if(MIGP_RegArea_Read(apCommParaST[CommIndex], EIA, 0x0000, 0x40, &pbTemp, 500) == TRUE)
 		{
 			//串口需要清理收发区域并且等待100ms
@@ -508,17 +512,24 @@ BOOL SA_InitSpectrometers(int CommIndex)
 		iTemp |= (int)pbTemp[7 + NVPA_MAX_INTEGRAL_TIME_ADDR];
 		apCommParaST[CommIndex]->stSpectrometerPara.iMaxIntegrationTimeUS = iTemp;
 		
-		//读取最像素点个数
+		//读取像素点个数
 		iTemp = (int)pbTemp[4 + NVPA_PIXELS_NUMBER_ADDR] << 8;
 		iTemp |= (int)pbTemp[4 + NVPA_PIXELS_NUMBER_ADDR + 1];
 		apCommParaST[CommIndex]->stSpectrometerPara.iPixelNumber = iTemp;
 		//读取电路板信息 新板子为1
 		iTemp = (int)pbTemp[4 + NVPA_PIXELS_TYPE_ADDR];
 		apCommParaST[CommIndex]->stSpectrometerPara.iPixelType = iTemp;
-
+		
 		//读取电路板信息 像素点先后 后为1
 		iTemp = (int)pbTemp[4 + NVPA_PIXELS_POS_ADDR];
 		apCommParaST[CommIndex]->stSpectrometerPara.iPosType = iTemp;
+
+//		char szBuf[4]; //int 是4个字节，而char是1个字节，所以数组大小是4
+//		LPCTSTR Text1;
+//		sprintf(szBuf,"%d",iTemp);// 歌曲序号从1开始,所以为i+1
+//		Text1=LPCTSTR(szBuf);
+//		MessageBox(NULL,Text1,TEXT("YES"),MB_OK);
+
 
 		//读取波长系数
 		for(i = 0; i < 4; i++)
@@ -803,11 +814,15 @@ int SA_OpenSpectrometers(void)
 		}		
 	}
 
-	int iGetNum = 0;
+/*	int iGetNum = 0;
 	double dGetAD[2048];
-
-	SA_GetSpectum(0, dGetAD, iGetNum);
-
+	Sleep(1);
+	SA_GetSpectumN(0, dGetAD, iGetNum);
+	Sleep(1);
+	SA_GetSpectumN(0, dGetAD, iGetNum);
+	Sleep(1);
+	SA_GetSpectumN(0, dGetAD, iGetNum);
+*/
 	return g_iCommIndex;
 }
 
@@ -927,8 +942,6 @@ void SA_CloseSpectrometers(void)
 	}
 }
 
-
-
 /****************************************************************************************/
 /****************************************************************************************/
 /***************************** 光谱仪参数设置接口****************************************/
@@ -972,8 +985,6 @@ int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec)
 	{
 		return SA_API_FAIL;
 	}
-
-	//apCommParaST[spectrometerIndex]->stSpectrometerPara.iIntegrationTime = usec;
 	
 	return SA_API_SUCCESS;
 }
@@ -1077,7 +1088,6 @@ int SA_SetIntegrationTime (int spectrometerIndex, int usec)
 	}
 	
 	apCommParaST[spectrometerIndex]->stSpectrometerPara.iIntegrationTime = usec;
-	
 	return SA_API_SUCCESS;
 }
 
@@ -1110,6 +1120,7 @@ int SA_SetAverageTimes(int spectrometerIndex, int AverageTimes)
 	}
 	
 	apCommParaST[spectrometerIndex]->stSpectrometerPara.iAverageTimes = AverageTimes;
+	g_iAve = AverageTimes;
 
 	return SA_API_SUCCESS;
 }
@@ -1119,13 +1130,9 @@ int SA_SetAverageTimes(int spectrometerIndex, int AverageTimes)
  {
 	 BYTE bTemp[1];
 	 int i = 0;
- 
-	 //double dADTemp[2048];
-	 //double dAD[2048];
-		 
+ 		 
 	 if(spectrometerIndex > g_iCommIndex)
 	 {	 
- // 	 printf_debug("SA_GetSpectumForHWTrigger FAIL");
 		 return SA_API_FAIL;
 	 }
 	 
@@ -1133,9 +1140,10 @@ int SA_SetAverageTimes(int spectrometerIndex, int AverageTimes)
 	 {
 	 	 case SOFTWARE_SYNCHRONOUS:
 		 	 bTemp[0] = 0x00;
-			 
+			 g_bTrig = FALSE;
 			 break;
 		case SOFTWARE_ASYNCHRONOUS:
+			g_bTrig = TRUE;
 		 	 bTemp[0] = 0x02;
 			 break;
 		case CACHE_ASYNCHRONOUS:
@@ -1498,6 +1506,7 @@ int SA_GetWavelength(int spectrometerIndex, double *pdWavelengthData, int &pSpec
 		}
 		
 	}
+	g_bHaveRead = TRUE;
 
 	return SA_API_SUCCESS;
 }
@@ -1540,7 +1549,6 @@ int SA_ScanStartCacheAsyncTrigger(int spectrometerIndex, int iCacheChannelNum)
 	}
 
 	return SA_API_SUCCESS;
-
 }
 
 int SA_GetSpectumRBGModeRETrigger(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber, int iCacheChannelNum)
@@ -1553,14 +1561,12 @@ int SA_GetSpectumRBGModeFETrigger(int spectrometerIndex, double *pdSpectumData, 
 	return SA_GetCacheAsyncSpectum(spectrometerIndex, pdSpectumData, pSpectumNumber, iCacheChannelNum);
 }
 
-
 int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber, int iCacheChannelNum)
 {
 	BYTE *pbTemp;
 	int i = 0;
 	int iTimeOut;
 	//HANDLE CommDev;
-
 		
 	if(spectrometerIndex > g_iCommIndex)
 	{	
@@ -1575,7 +1581,6 @@ int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int &p
 
 	if(apCommParaST[spectrometerIndex]->stSpectrometerPara.cTriggerMode != CACHE_ASYNCHRONOUS)
 	{
-	MessageBox(NULL,TEXT("BBB"),TEXT("YES"),MB_OK);
 		return SA_API_FAIL;
 	}
 		
@@ -1596,10 +1601,8 @@ int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int &p
 		iTimeOut = iTimeOut * apCommParaST[spectrometerIndex]->stSpectrometerPara.iAverageTimes + 500;
 	}
 
-
 	if(MIGP_RegArea_Read(apCommParaST[spectrometerIndex], MDA, iCacheChannelNum, (apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber * 2), &pbTemp, iTimeOut) == FALSE)
 	{
-		MessageBox(NULL,TEXT("MIGP_RegArea_Read"),TEXT("YES"),MB_OK);
 		return SA_API_FAIL;
 	}
 
@@ -1608,7 +1611,7 @@ int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int &p
 	{
 	//	MessageBox(NULL,TEXT("1024"),TEXT("YES"),MB_OK);
 		double pTempData[1024];
-		if(!g_bHaveRead)
+		if(0)//!g_bHaveRead)
 		{
 			SA_GetWavelength(spectrometerIndex, g_pdWavelengthData, g_pTempSpectumNumber);
 			g_bHaveRead = TRUE;
@@ -1805,6 +1808,8 @@ int SA_ScanStartAsyncSoftTrigger(int spectrometerIndex)
 		return SA_API_FAIL;
 	}
 
+	g_bTrig = TRUE;
+
 	return SA_API_SUCCESS;
 
 }
@@ -1896,8 +1901,33 @@ int SA_UseFFTFilter(BOOL bUseFFT,float fValue)
 }
 
 
-
 int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber)
+{
+	if(!g_bTrig || g_iAve == 1)
+	{
+		return SA_GetSpectumN(spectrometerIndex, pdSpectumData, pSpectumNumber);	
+	}
+	else
+	{
+		double pdTempSpectumData[2048];
+		for(int j = 0; j < 2048; j++)
+		{
+			pdSpectumData[j] = 0;
+		}
+		for(int i = 0; i < g_iAve; i++)
+		{
+			SA_ScanStartAsyncSoftTrigger(spectrometerIndex);
+			SA_GetSpectumN(spectrometerIndex, pdTempSpectumData, pSpectumNumber);
+			for(j = 0; j < pSpectumNumber; j++)
+			{
+				pdSpectumData[j] = pdSpectumData[j] + pdTempSpectumData[j]/g_iAve;
+			}
+		}
+		return SA_API_SUCCESS;
+	}
+}
+
+int SA_GetSpectumN(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber)
 {
 	BYTE *pbTemp;
 	int i = 0;
@@ -1939,9 +1969,8 @@ int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNum
 	pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
 	if(pSpectumNumber == 1024)
 	{
-	//	MessageBox(NULL,TEXT("1024"),TEXT("YES"),MB_OK);
 		double pTempData[1024];
-		if(!g_bHaveRead)
+		if(0)//!g_bHaveRead)
 		{
 			SA_GetWavelength(spectrometerIndex, g_pdWavelengthData, g_pTempSpectumNumber);
 			g_bHaveRead = TRUE;
@@ -2102,25 +2131,46 @@ int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNum
 
 	return SA_API_SUCCESS;
 }
+double g_pdTempSpectumData1[2048];
 
 int SA_GetAsyncSoftSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber)
 {
-	return SA_GetSpectum(spectrometerIndex, pdSpectumData, pSpectumNumber);
+	if(g_iAve == 1)
+		return SA_GetSpectumN(spectrometerIndex, pdSpectumData, pSpectumNumber);
+	else
+	{
+		for(int j = 0; j < 2048; j++)
+		{
+			pdSpectumData[j] = 0;
+		}
+		for(int i = 0; i < g_iAve; i++)
+		{
+			if(i!=0)
+				SA_ScanStartAsyncSoftTrigger(spectrometerIndex);
+			SA_GetSpectumN(spectrometerIndex, g_pdTempSpectumData1, pSpectumNumber);
+			for(j = 0; j < pSpectumNumber; j++)
+			{
+				pdSpectumData[j] = pdSpectumData[j] + g_pdTempSpectumData1[j]/g_iAve;
+			}
+			Sleep(1);
+		}
+		return SA_API_SUCCESS;
+	}
 }
 
 int SA_GetMultiChannelAsyncSoftSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber)
 {
-	return SA_GetSpectum(spectrometerIndex, pdSpectumData, pSpectumNumber);
+	return SA_GetSpectumN(spectrometerIndex, pdSpectumData, pSpectumNumber);
 }
 
 int SA_GetSpectumRETrigger(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber)
 {
-	return SA_GetSpectum(spectrometerIndex, pdSpectumData, pSpectumNumber);
+	return SA_GetSpectumN(spectrometerIndex, pdSpectumData, pSpectumNumber);
 }
 
 int SA_GetSpectumFETrigger(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber)
 {
-	return SA_GetSpectum(spectrometerIndex, pdSpectumData, pSpectumNumber);
+	return SA_GetSpectumN(spectrometerIndex, pdSpectumData, pSpectumNumber);
 }
 
 /************************************************************/
@@ -2206,11 +2256,6 @@ int SA_GetSpectumAutoIntegrationTime(int spectrometerIndex, double *pdSpectumDat
 		}	
 	}
 	
-	//for(i = 0; i < apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber; i++)
-	//{
-//		pdSpectumData[i] = (double)(((double)pbTemp[4 + (i * 2)] * 256) + pbTemp[4 + (i * 2) + 1]);
-//	}
-
 
 	
 	return SA_API_SUCCESS;
@@ -2320,7 +2365,7 @@ int SA_GetSpectumHLTrigger(int spectrometerIndex, double *pdSpectumData, int &pS
 	{
 	//	MessageBox(NULL,TEXT("1024"),TEXT("YES"),MB_OK);
 		double pTempData[1024];
-		if(!g_bHaveRead)
+		if(0)//!g_bHaveRead)
 		{
 			SA_GetWavelength(spectrometerIndex, g_pdWavelengthData, g_pTempSpectumNumber);
 			g_bHaveRead = TRUE;
@@ -2506,7 +2551,7 @@ int SA_GetSpectumLLTrigger(int spectrometerIndex, double *pdSpectumData, int &pS
 	{
 	//	MessageBox(NULL,TEXT("1024"),TEXT("YES"),MB_OK);
 		double pTempData[1024];
-		if(!g_bHaveRead)
+		if(0)//!g_bHaveRead)
 		{
 			SA_GetWavelength(spectrometerIndex, g_pdWavelengthData, g_pTempSpectumNumber);
 			g_bHaveRead = TRUE;
@@ -2765,14 +2810,7 @@ int SA_GetSpectrometerPixelsNumber (int spectrometerIndex)
 	}
 
 	int pSpectumNumber = apCommParaST[spectrometerIndex]->stSpectrometerPara.iPixelNumber;
-	if(pSpectumNumber == 1024)
-	{
-		return 2048;
-	}
-	else
-	{
-		return pSpectumNumber;
-	}
+	return 2048;//pSpectumNumber;
 }
 
 /****************************************************************************************/

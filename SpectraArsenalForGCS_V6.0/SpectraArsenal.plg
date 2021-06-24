@@ -6,28 +6,37 @@
 --------------------Configuration: SpectraArsenal - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\Users\chejf\AppData\Local\Temp\RSPB321.tmp" with contents
+Creating command line "rc.exe /l 0x804 /fo"Release/Script3.res" /d "NDEBUG" "E:\work\GCS-300\应用软件\新板子\SpectraArsenalForGCS_V6.1(异步平均小板子)\Script3.rc"" 
+Creating temporary file "C:\Users\user\AppData\Local\Temp\RSP1D8A.tmp" with contents
 [
 /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SPECTRAARSENAL_EXPORTS" /FR"Release/" /Fo"Release/" /Fd"Release/" /FD /c 
-"D:\GitHub\singlebranch\Spectral\SPDriver\SpectraArsenalForGCS_V6.0\SpectraArsenal.cpp"
+"E:\work\GCS-300\应用软件\新板子\SpectraArsenalForGCS_V6.1(异步平均小板子)\Com_Driver.cpp"
+"E:\work\GCS-300\应用软件\新板子\SpectraArsenalForGCS_V6.1(异步平均小板子)\MIGP.cpp"
+"E:\work\GCS-300\应用软件\新板子\SpectraArsenalForGCS_V6.1(异步平均小板子)\SpectraArsenal.cpp"
+"E:\work\GCS-300\应用软件\新板子\SpectraArsenalForGCS_V6.1(异步平均小板子)\StdAfx.cpp"
 ]
-Creating command line "cl.exe @C:\Users\chejf\AppData\Local\Temp\RSPB321.tmp" 
-Creating temporary file "C:\Users\chejf\AppData\Local\Temp\RSPB332.tmp" with contents
+Creating command line "cl.exe @C:\Users\user\AppData\Local\Temp\RSP1D8A.tmp" 
+Creating temporary file "C:\Users\user\AppData\Local\Temp\RSP1D8B.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib USB_Driver.lib /nologo /dll /incremental:no /pdb:"Release/SpectraArsenal.pdb" /machine:I386 /out:"Release/SpectraArsenal.dll" /implib:"Release/SpectraArsenal.lib" 
-.\Release\Com_Driver.obj
-.\Release\MIGP.obj
-.\Release\SpectraArsenal.obj
-.\Release\StdAfx.obj
-.\Release\Script3.res
+".\Release\Com_Driver.obj"
+".\Release\MIGP.obj"
+".\Release\SpectraArsenal.obj"
+".\Release\StdAfx.obj"
+".\Release\Script3.res"
 ]
-Creating command line "link.exe @C:\Users\chejf\AppData\Local\Temp\RSPB332.tmp"
+Creating command line "link.exe @C:\Users\user\AppData\Local\Temp\RSP1D8B.tmp"
 <h3>Output Window</h3>
+Compiling resources...
 Compiling...
+Com_Driver.cpp
+MIGP.cpp
 SpectraArsenal.cpp
+StdAfx.cpp
+Generating Code...
 Linking...
    Creating library Release/SpectraArsenal.lib and object Release/SpectraArsenal.exp
-Creating command line "bscmake.exe /nologo /o"Release/SpectraArsenal.bsc"  .\Release\Com_Driver.sbr .\Release\MIGP.sbr .\Release\SpectraArsenal.sbr .\Release\StdAfx.sbr"
+Creating command line "bscmake.exe /nologo /o"Release/SpectraArsenal.bsc"  ".\Release\Com_Driver.sbr" ".\Release\MIGP.sbr" ".\Release\SpectraArsenal.sbr" ".\Release\StdAfx.sbr""
 Creating browse info file...
 <h3>Output Window</h3>
 
