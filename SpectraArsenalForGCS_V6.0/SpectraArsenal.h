@@ -101,6 +101,7 @@ SPECTRAARSENAL_API char * SA_GetManufacturingDate(int spectrometerIndex);
 /* 光谱数据处理相关接口 */
 SPECTRAARSENAL_API int SA_OpenModSpec(BOOL bOpen,int iNum, float fValue);
 SPECTRAARSENAL_API int SA_UseFFTFilter(BOOL bUseFFT,float fValue);
+SPECTRAARSENAL_API int SA_SetWindow(int window);
 
 /*********************************软件单通道触发相关操作***********************************************/
 

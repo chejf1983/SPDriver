@@ -32,7 +32,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     return TRUE;
 }
 
-const char acAPIVersion[] = "V1.00";
+const char acAPIVersion[] = "V6.10";
 const char acComName[32][14] = 
 {
 	"COM1",
@@ -101,6 +101,9 @@ int FFTData_Len = 2048;
 
 BOOL g_bTrig = FALSE;
 int g_iAve = 1;
+
+//滑动窗口
+int g_window = 0;
 
 //////////////////////////////////////////////////////////////////////////////////////////
 ////////滤波
@@ -947,6 +950,43 @@ void SA_CloseSpectrometers(void)
 /***************************** 光谱仪参数设置接口****************************************/
 /****************************************************************************************/
 /****************************************************************************************/
+void WindowSmooth(double *input, int inputlen)
+{
+	int i = 0;
+	int j = 0;
+	int w_index = 0;
+    int p = g_window;      // 半窗口(M)
+	double H[21];
+	double output[2048] = {0};
+
+	//设置窗口权重
+	for(i = 0; i < 21; i++)
+	{
+		H[i] = 1.0 / (p*2+1);
+	}
+
+	//卷积
+	for(i = p + 1; i < inputlen - p - 1; i++)
+    {
+		//清0
+        output[i] = 0;
+		//窗口内所有数据拟合
+        for(j = i - p, w_index = 0; j <= i + p; j++, w_index ++){
+			//只用了H[0]这一行，因为只计算a0
+            output[i] += H[w_index] * input[j];
+        }
+    }
+
+	//头尾不做处理，直接复制，最后差分数据会变成0
+    for(i = 0; i < p + 1; i++)
+    {
+        output[i] =  input[i];
+        output[inputlen - p - 1 + i] = input[inputlen - p - 1 + i];
+    }
+
+	memcpy(input, output, sizeof(double) * inputlen);
+}
+
 int SA_SetMultiChannelIntegrationTime (int spectrometerIndex, int *usec)
 {
 	BYTE bTemp[64];
@@ -1695,6 +1735,11 @@ int SA_GetCacheAsyncSpectum(int spectrometerIndex, double *pdSpectumData, int &p
 		FFT_Filter(pdSpectumData, 2048);
 	}
 
+	if(g_window > 1)
+	{
+		WindowSmooth(pdSpectumData, 2048);
+	}
+
 	if(g_bNeedMod)
 	{
 //	MessageBox(NULL,TEXT("BBB"),TEXT("YES"),MB_OK);
@@ -2053,6 +2098,11 @@ int SA_GetSpectumN(int spectrometerIndex, double *pdSpectumData, int &pSpectumNu
  //	MessageBox(NULL,TEXT("AAA"),TEXT("YES"),MB_OK);
 		FFT_Filter(pdSpectumData, 2048);
 	}
+	if(g_window > 1)
+	{
+		WindowSmooth(pdSpectumData, 2048);
+	}
+
 
 	if(g_bNeedMod)
 	{
@@ -2448,6 +2498,11 @@ int SA_GetSpectumHLTrigger(int spectrometerIndex, double *pdSpectumData, int &pS
  //	MessageBox(NULL,TEXT("AAA"),TEXT("YES"),MB_OK);
 		FFT_Filter(pdSpectumData, 2048);
 	}
+	if(g_window > 1)
+	{
+		WindowSmooth(pdSpectumData, 2048);
+	}
+
 
 	if(g_bNeedMod)
 	{
@@ -2633,6 +2688,10 @@ int SA_GetSpectumLLTrigger(int spectrometerIndex, double *pdSpectumData, int &pS
 	{
  //	MessageBox(NULL,TEXT("AAA"),TEXT("YES"),MB_OK);
 		FFT_Filter(pdSpectumData, 2048);
+	}
+	if(g_window > 1)
+	{
+		WindowSmooth(pdSpectumData, 2048);
 	}
 
 	if(g_bNeedMod)
@@ -3590,6 +3649,20 @@ int SA_WriteUserMemory(int spectrometerIndex, int Address, int length, BYTE * Us
 	return SA_API_SUCCESS;
 }
 
+SPECTRAARSENAL_API int SA_SetWindow(int window)
+{
+	g_window = window;
+
+	if(window < 0){
+		g_window = 0;
+	}
+
+	if(window > 10){
+		g_window = 10;
+	}
+
+	return g_window;
+}
 
 /* 用户存储操作接口 
 typedef enum
