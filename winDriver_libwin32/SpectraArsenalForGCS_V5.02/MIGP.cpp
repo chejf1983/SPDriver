@@ -15,7 +15,7 @@ WORD PrintfDebugSwitch = AS_DLL_PRINTF_DEBUG_OFF;
 void MIGP_RevBuff_Init(MIGP_ST *pstMIGPCom)
 {
 	pstMIGPCom->ulBuffRxNum = 0;
-    pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
+	pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
 	pstMIGPCom->bReceiveFlag = MIGP_FRAME_RX_FLAG_NULL;
 
 	return;
@@ -23,138 +23,138 @@ void MIGP_RevBuff_Init(MIGP_ST *pstMIGPCom)
 
 void MIGP_Rev_Byte(MIGP_ST *pstMIGPCom, BYTE bData)
 {
-    if(pstMIGPCom->bReceiveFlag == MIGP_FRAME_RX_FLAG_OK)
-    {
-//    	printf_debug("MIGP_Rev_Byte:: bReceiveFlag is OK");
-        return;
-    }
+	if(pstMIGPCom->bReceiveFlag == MIGP_FRAME_RX_FLAG_OK)
+	{
+//    		printf_debug("MIGP_Rev_Byte:: bReceiveFlag is OK");
+		return;
+	}
 	
-    if(pstMIGPCom->ulBuffRxNum >= MIGP_REV_FRAME_MAX_LENGTH)
-    {
-        pstMIGPCom->ulBuffRxNum = 0;
-        pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
-    }
+	if(pstMIGPCom->ulBuffRxNum >= MIGP_REV_FRAME_MAX_LENGTH)
+	{
+		pstMIGPCom->ulBuffRxNum = 0;
+		pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
+	}
 
-    switch(pstMIGPCom->ucFrameState)
-    {
-        case MIGP_REV_FRAME_NULL:
-            if(bData == 0x55)
-            {
-               pstMIGPCom->ucFrameState = MIGP_REV_FRAME_F_0X55_FLAG;
-            }
-            break;
-        case MIGP_REV_FRAME_F_0X55_FLAG:
-            if(bData == 0xAA)
-            {
-               pstMIGPCom->ucFrameState = MIGP_REV_FRAME_F_0XAA_FLAG;
-            }
-            else
-            {
-               pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
-            }
-            break;
-        case MIGP_REV_FRAME_F_0XAA_FLAG:
-            if(bData == 0x7B)
-            {
-               pstMIGPCom->ucFrameState = MIGP_REV_FRAME_S_0X7B_FLAG;
-            }
-            else
-            {
-               pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
-            }
-            break;
-        case MIGP_REV_FRAME_S_0X55_FLAG:
-            if(bData == 0xAA)
-            {
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_S_0XAA_FLAG;
-            }
-            else
-            {
-                pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x55;
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
+	switch(pstMIGPCom->ucFrameState)
+	{
+		case MIGP_REV_FRAME_NULL:
+			if(bData == 0x55)
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_F_0X55_FLAG;
+			}
+		break;
+		case MIGP_REV_FRAME_F_0X55_FLAG:
+			if(bData == 0xAA)
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_F_0XAA_FLAG;
+			}
+			else
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
+			}
+		break;
+		case MIGP_REV_FRAME_F_0XAA_FLAG:
+			if(bData == 0x7B)
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_S_0X7B_FLAG;
+			}
+			else
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
+			}
+		break;
+		case MIGP_REV_FRAME_S_0X55_FLAG:
+			if(bData == 0xAA)
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_S_0XAA_FLAG;
+			}
+			else
+			{
+				pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x55;
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
 				MIGP_Rev_Byte(pstMIGPCom, bData);
-            }
-            break;
-        case MIGP_REV_FRAME_S_0XAA_FLAG:
-            if(bData == 0x7d)
-            {
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_S_0X7D_FLAG;
-            }
-            else if(bData == 0x7b)
-            {
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_S_0X7B_FLAG;
-            }
-            else
-            {
-                pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x55;
-                pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0xaa;
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
+			}
+		break;
+		case MIGP_REV_FRAME_S_0XAA_FLAG:
+			if(bData == 0x7d)
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_S_0X7D_FLAG;
+			}
+			else if(bData == 0x7b)
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_S_0X7B_FLAG;
+			}
+			else
+			{
+				pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x55;
+				pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0xaa;
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
 				MIGP_Rev_Byte(pstMIGPCom, bData);
-            }
-            break;
-        case MIGP_REV_FRAME_F_0X7B_FLAG:
-            if(bData == 0x7B)
-            {
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
-                pstMIGPCom->ulBuffRxNum = 0;
-            }
-            else
-            {
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
-            }
-            break;
-        case MIGP_REV_FRAME_F_0X7D_FLAG:
-            break;
-        case MIGP_REV_FRAME_S_0X7B_FLAG:
-            if(bData == 0x7b)
-            {
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
-                pstMIGPCom->ulBuffRxNum = 0;
-            }
-            else
-            {
-                pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x55;
-                pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0xaa;
-                pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x7b;
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
+			}
+		break;
+		case MIGP_REV_FRAME_F_0X7B_FLAG:
+			if(bData == 0x7B)
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
+				pstMIGPCom->ulBuffRxNum = 0;
+			}
+			else
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
+			}
+		break;
+		case MIGP_REV_FRAME_F_0X7D_FLAG:
+		break;
+		case MIGP_REV_FRAME_S_0X7B_FLAG:
+			if(bData == 0x7b)
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
+				pstMIGPCom->ulBuffRxNum = 0;
+			}
+			else
+			{
+				pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x55;
+				pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0xaa;
+				pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x7b;
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
 				MIGP_Rev_Byte(pstMIGPCom, bData);
-            }
-            break;
-        case MIGP_REV_FRAME_S_0X7D_FLAG:
-            if(bData == 0x7d)
-            {
-                pstMIGPCom->bReceiveFlag = MIGP_FRAME_RX_FLAG_OK;
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
-            }
-            else
-            {
-                pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x55;
-                pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0xaa;
-                pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x7d;
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
+			}
+		break;
+		case MIGP_REV_FRAME_S_0X7D_FLAG:
+			if(bData == 0x7d)
+			{
+				pstMIGPCom->bReceiveFlag = MIGP_FRAME_RX_FLAG_OK;
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_NULL;
+			}
+			else
+			{
+				pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x55;
+				pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0xaa;
+				pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = 0x7d;
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_START_OK;
 				MIGP_Rev_Byte(pstMIGPCom, bData);
-            }
-            break;
-        case MIGP_REV_FRAME_START_OK:
-            if(bData == 0x55)
-            {
-                pstMIGPCom->ucFrameState = MIGP_REV_FRAME_S_0X55_FLAG;
-            }
-            else
-            {
-                pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = bData;
-            }
-            break;
-    }
+			}
+		break;
+		case MIGP_REV_FRAME_START_OK:
+			if(bData == 0x55)
+			{
+				pstMIGPCom->ucFrameState = MIGP_REV_FRAME_S_0X55_FLAG;
+			}
+			else
+			{
+				pstMIGPCom->bFrameRxBuff[pstMIGPCom->ulBuffRxNum++] = bData;
+			}
+		break;
+	}
 
-    return;
+	return;
 }
 
 BOOL MIGP_Frame_Resolution(void *pstCommHandle, BYTE **bBuff, BYTE bCMD, BYTE bCRCFlag)
 {
-    BYTE bMIGPLRC = 0;
+	BYTE bMIGPLRC = 0;
 	BYTE bTempLRC = 0;
-    int i = 0;
+	int i = 0;
 	COMM_PARA_ST *pstMigpPara = NULL;
 	int ulLength;
 	BYTE RxCMD = 0 ;
@@ -167,15 +167,15 @@ BOOL MIGP_Frame_Resolution(void *pstCommHandle, BYTE **bBuff, BYTE bCMD, BYTE bC
 
 	pstMigpPara = (COMM_PARA_ST *)pstCommHandle;
 
-    if(pstMigpPara->stMIGP.ulBuffRxNum < 3)
-    {
-//    	printf_debug("MIGP_Frame_Resolution::pstMigpPara->stMIGP.ulBuffTxNum is wrong");
-        return FALSE;
-    }
+	if(pstMigpPara->stMIGP.ulBuffRxNum < 3)
+	{
+//    		printf_debug("MIGP_Frame_Resolution::pstMigpPara->stMIGP.ulBuffTxNum is wrong");
+		return FALSE;
+	}
 
-    RxCMD = pstMigpPara->stMIGP.bFrameRxBuff[2];
-    bMIGPLRC = pstMigpPara->stMIGP.bFrameRxBuff[pstMigpPara->stMIGP.ulBuffRxNum - 1];
-    *bBuff = &pstMigpPara->stMIGP.bFrameRxBuff[3];
+	RxCMD = pstMigpPara->stMIGP.bFrameRxBuff[2];
+	bMIGPLRC = pstMigpPara->stMIGP.bFrameRxBuff[pstMigpPara->stMIGP.ulBuffRxNum - 1];
+	*bBuff = &pstMigpPara->stMIGP.bFrameRxBuff[3];
 	ulLength = pstMigpPara->stMIGP.ulBuffRxNum - 4;
 
     /* µØÖ·²»Æ¥Åä */
@@ -222,21 +222,17 @@ BOOL MIGP_Frame_Resolution(void *pstCommHandle, BYTE **bBuff, BYTE bCMD, BYTE bC
     return TRUE;
 }
 
+BYTE g_bRxBuff1[4200];
 
 BOOL MIGP_Receive_Frame(void *pstCommHandle, int iTimeOut, int ulFrameLength, BYTE bCmd, BYTE **pbRxData)
 {
 	COMM_PARA_ST *pstMigpPara = NULL;
-	BYTE bRxBuff[4200];
 	unsigned long ulRxLength;
 	int USBRxLength;
 	int i;
-
-
-	
-	
+		
 	if(pstCommHandle == NULL)
 	{
-		printf_debug("MIGP_Receive_Frame::pstCommHandle is NULL");
 		return FALSE;
 	}
 
@@ -247,85 +243,73 @@ BOOL MIGP_Receive_Frame(void *pstCommHandle, int iTimeOut, int ulFrameLength, BY
 	pstMigpPara->stMIGP.ucFrameState = MIGP_REV_FRAME_NULL;
 	if(pstMigpPara->enCommType == COM_SERIAL)
 	{	
-			Com_SetReadTime(pstMigpPara->stComPara.ComHandle, iTimeOut, 1, iTimeOut);
-			if(Com_Read(pstMigpPara->stComPara.ComHandle, bRxBuff, ulFrameLength, &ulRxLength) == FALSE)
-			{
-				printf_debug("MIGP_Receive_Frame::Com_Read FALSE");
-				return FALSE;
-			}
-			else
-			{
-			    if(ulRxLength == 0)
-			    {
-			    	printf_debug("MIGP_Receive_Frame:: Time out");
-					return FALSE;
-			    }
-
-                for(i = 0; i < (int)ulRxLength; i++)
-                {
-					MIGP_Rev_Byte(&pstMigpPara->stMIGP, bRxBuff[i]);
-					if(pstMigpPara->stMIGP.bReceiveFlag == MIGP_FRAME_RX_FLAG_OK)
-					{
-						if(MIGP_Frame_Resolution(pstCommHandle, pbRxData, bCmd, 0) == FALSE)
-						{
-							printf_debug("MIGP_Receive_Frame:: MIGP_Frame_Resolution is FALSE");
-							MIGP_RevBuff_Init(&pstMigpPara->stMIGP);
-							return FALSE;
-						}
-						else
-						{
-							printf_debug("MIGP_Receive_Frame:: OK");
-							return TRUE;
-						}
-					}
-                }
-			}
-	}
-	else if(pstMigpPara->enCommType == USB_WINLIB)
-	{	
-		USBRxLength = USBBulkReadData(pstMigpPara->stComPara.iUSBDevNum, EP2_IN, (char *)bRxBuff, ulFrameLength, iTimeOut);
-
-
-	
-		if(USBRxLength <=  0)
+		Com_SetReadTime(pstMigpPara->stComPara.ComHandle, iTimeOut, 1, iTimeOut);
+		if(Com_Read(pstMigpPara->stComPara.ComHandle, g_bRxBuff1, ulFrameLength, &ulRxLength) == FALSE)
 		{
-			printf_debug("MIGP_Receive_Frame::Com_Read FALSE");
 			return FALSE;
 		}
 		else
 		{
-			
-            for(i = 0; i < USBRxLength; i++)
-            {
-				MIGP_Rev_Byte(&pstMigpPara->stMIGP, bRxBuff[i]);
+			if(ulRxLength == 0)
+			{
+				return FALSE;
+			}
+
+			for(i = 0; i < (int)ulRxLength; i++)
+			{
+				MIGP_Rev_Byte(&pstMigpPara->stMIGP, g_bRxBuff1[i]);
 				if(pstMigpPara->stMIGP.bReceiveFlag == MIGP_FRAME_RX_FLAG_OK)
 				{
 					if(MIGP_Frame_Resolution(pstCommHandle, pbRxData, bCmd, 0) == FALSE)
 					{
-					    printf_debug("MIGP_Receive_Frame:: MIGP_Frame_Resolution is FALSE");
 						MIGP_RevBuff_Init(&pstMigpPara->stMIGP);
 						return FALSE;
 					}
 					else
 					{
-						printf_debug("MIGP_Receive_Frame:: OK");
-
-	
 						return TRUE;
 					}
 				}
-            }
+			}
+		}
+	}
+	else if(pstMigpPara->enCommType == USB_WINLIB)
+	{	
+		USBRxLength = USBBulkReadData(pstMigpPara->stComPara.iUSBDevNum, EP2_IN, (char *)g_bRxBuff1, ulFrameLength, iTimeOut);
+	
+		if(USBRxLength <=  0)
+		{
+			return FALSE;
+		}
+		else
+		{			
+			for(i = 0; i < USBRxLength; i++)
+			{
+				MIGP_Rev_Byte(&pstMigpPara->stMIGP, g_bRxBuff1[i]);
+				if(pstMigpPara->stMIGP.bReceiveFlag == MIGP_FRAME_RX_FLAG_OK)
+				{
+					if(MIGP_Frame_Resolution(pstCommHandle, pbRxData, bCmd, 0) == FALSE)
+					{
+						MIGP_RevBuff_Init(&pstMigpPara->stMIGP);
+						return FALSE;
+					}
+					else
+					{
+						return TRUE;
+					}
+				}
+			 }
 		}
 	}
 
-	printf_debug("MIGP_Receive_Frame::FALSE");
 	return FALSE;
 }
+
+BYTE g_bRxBuff2[4200];
 
 BOOL MIGP_Receive_Frame_No_CRC(void *pstCommHandle, int iTimeOut, int ulFrameLength, BYTE bCmd, BYTE **pbRxData)
 {
 	COMM_PARA_ST *pstMigpPara = NULL;
-	BYTE bRxBuff[4200];
 	unsigned long ulRxLength;
 	int i;
 	
@@ -342,40 +326,40 @@ BOOL MIGP_Receive_Frame_No_CRC(void *pstCommHandle, int iTimeOut, int ulFrameLen
 	pstMigpPara->stMIGP.ucFrameState = MIGP_REV_FRAME_NULL;
 	if(pstMigpPara->enCommType == COM_SERIAL)
 	{	
-			Com_SetReadTime(pstMigpPara->stComPara.ComHandle, iTimeOut, 1, iTimeOut);
-			if(Com_Read(pstMigpPara->stComPara.ComHandle, bRxBuff, ulFrameLength, &ulRxLength) == FALSE)
+		Com_SetReadTime(pstMigpPara->stComPara.ComHandle, iTimeOut, 1, iTimeOut);
+		if(Com_Read(pstMigpPara->stComPara.ComHandle, g_bRxBuff2, ulFrameLength, &ulRxLength) == FALSE)
+		{
+//			printf_debug("MIGP_Receive_Frame::Com_Read FALSE");
+			return FALSE;
+		}
+		else
+		{
+			if(ulRxLength == 0)
 			{
-//				printf_debug("MIGP_Receive_Frame::Com_Read FALSE");
+//				printf_debug("MIGP_Receive_Frame::Time out");
 				return FALSE;
 			}
-			else
-			{
-			    if(ulRxLength == 0)
-			    {
-//			    	printf_debug("MIGP_Receive_Frame::Time out");
-					return FALSE;
-			    }
 
-                for(i = 0; i < (int)ulRxLength; i++)
-                {
-					MIGP_Rev_Byte(&pstMigpPara->stMIGP, bRxBuff[i]);
-                }
+			for(i = 0; i < (int)ulRxLength; i++)
+			{
+				MIGP_Rev_Byte(&pstMigpPara->stMIGP, g_bRxBuff2[i]);
+			}
 				
-				if(pstMigpPara->stMIGP.bReceiveFlag == MIGP_FRAME_RX_FLAG_OK)
+			if(pstMigpPara->stMIGP.bReceiveFlag == MIGP_FRAME_RX_FLAG_OK)
+			{
+				if(MIGP_Frame_Resolution(pstCommHandle, pbRxData, bCmd, 0) == FALSE)
 				{
-					if(MIGP_Frame_Resolution(pstCommHandle, pbRxData, bCmd, 0) == FALSE)
-					{
-//						printf_debug("MIGP_Receive_Frame:: MIGP_Frame_Resolution is FALSE");
-						MIGP_RevBuff_Init(&pstMigpPara->stMIGP);
-						return FALSE;
-					}
-					else
-					{
-						//printf_debug("MIGP_Receive_Frame:: OK");
-						return TRUE;
-					}
+//					printf_debug("MIGP_Receive_Frame:: MIGP_Frame_Resolution is FALSE");
+					MIGP_RevBuff_Init(&pstMigpPara->stMIGP);
+					return FALSE;
+				}
+				else
+				{
+					//printf_debug("MIGP_Receive_Frame:: OK");
+					return TRUE;
 				}
 			}
+		}
 	}
 	return FALSE;
 }
@@ -444,13 +428,10 @@ BOOL MIGP_RegArea_Write(void *pstCommHandle, AREA_TYPE enAreaType, int ulAddress
 	BYTE bLRC = 0;
 	BYTE bCmd = 0;
 	COMM_PARA_ST *pstMigpPara = NULL;
-//	BYTE bRxCMD;
-//	int ulDataLength;
-    BYTE *pbRxBuff;
+	BYTE *pbRxBuff;
 
 	if(pstCommHandle == NULL)
 	{
-		printf_debug("MIGP_RegArea_Write:: pstCommHandle is NULL");
 		return FALSE;
 	}
 
@@ -474,7 +455,6 @@ BOOL MIGP_RegArea_Write(void *pstCommHandle, AREA_TYPE enAreaType, int ulAddress
 	}
 	else
 	{
-		printf_debug("MIGP_RegArea_Write:: bCmd is Error");
 		return FALSE;
 	}
 
@@ -515,13 +495,11 @@ BOOL MIGP_RegArea_Write(void *pstCommHandle, AREA_TYPE enAreaType, int ulAddress
 	{
 		if(MIGP_Receive_Frame(pstCommHandle, 1000, 13, bCmd, &pbRxBuff) == FALSE)
 		{
-			printf_debug("MIGP_RegArea_Write:: MIGP_Receive_Frame is FALSE");
 			return FALSE;
 		}
 
 		if(pbRxBuff[0] != 0x66)
 		{
-			printf_debug("MIGP_RegArea_Write:: ack is False");
 			return FALSE;
 		}
 	}
@@ -537,14 +515,9 @@ BOOL MIGP_RegArea_Read(void *pstCommHandle, AREA_TYPE enAreaType,
 	BYTE bLRC = 0;
 	BYTE bCmd = 0;
 	COMM_PARA_ST *pstMigpPara = NULL;
-//	BYTE bRxCMD;
-//	int ulDataLength;
-
-
 
 	if(pstCommHandle == NULL)
 	{
-		printf_debug("MIGP_RegArea_Read:: pstCommHandle is NULL");
 		return FALSE;
 	}
 
@@ -572,7 +545,6 @@ BOOL MIGP_RegArea_Read(void *pstCommHandle, AREA_TYPE enAreaType,
 	}
 	else
 	{
-		printf_debug("MIGP_RegArea_Read:: enAreaType is Error");
 		return FALSE;
 	}
 	
@@ -610,7 +582,6 @@ BOOL MIGP_RegArea_Read(void *pstCommHandle, AREA_TYPE enAreaType,
  
 	if(MIGP_Receive_Frame(pstCommHandle, iTimeOut, ulLength + 16, bCmd, pbRxData) == FALSE)
 	{
-		printf_debug("MIGP_RegArea_Read:: MIGP_Receive_Frame is FALSE");
 		return FALSE;
 	}
 
@@ -628,12 +599,9 @@ BOOL MIGP_RegArea_Read_Plus(void *pstCommHandle, AREA_TYPE enAreaType,
 	BYTE bCmd = 0;
 	int i = 0;
 	COMM_PARA_ST *pstMigpPara = NULL;
-//	BYTE bRxCMD;
-//	int ulDataLength;
 
 	if(pstCommHandle == NULL)
 	{
-		printf_debug("MIGP_RegArea_Read:: pstCommHandle is NULL");
 		return FALSE;
 	}
 
@@ -661,7 +629,6 @@ BOOL MIGP_RegArea_Read_Plus(void *pstCommHandle, AREA_TYPE enAreaType,
 	}
 	else
 	{
-		printf_debug("MIGP_RegArea_Read:: enAreaType is Error");
 		return FALSE;
 	}
 	
@@ -696,15 +663,12 @@ BOOL MIGP_RegArea_Read_Plus(void *pstCommHandle, AREA_TYPE enAreaType,
 	}
 	else if(pstMigpPara->enCommType == USB_WINLIB)
 	{
-		
 		USBBulkWriteData(pstMigpPara->stComPara.iUSBDevNum, EP2_OUT, (char *)pstMigpPara->stMIGP.bFrameTxBuff,pstMigpPara->stMIGP.ulBuffTxNum, 100);
 	}
-
 
  
 	if(MIGP_Receive_Frame(pstCommHandle, iTimeOut, ulLength + 16, bCmd, pbRxData) == FALSE)
 	{
-		printf_debug("MIGP_RegArea_Read:: MIGP_Receive_Frame is FALSE");
 		return FALSE;
 	}
 
@@ -721,12 +685,9 @@ BOOL MIGP_RegArea_Read_NoRequest(void *pstCommHandle, AREA_TYPE enAreaType,
 	BYTE bLRC = 0;
 	BYTE bCmd = 0;
 	COMM_PARA_ST *pstMigpPara = NULL;
-//	BYTE bRxCMD;
-//	int ulDataLength;
 
 	if(pstCommHandle == NULL)
 	{
-//		printf_debug("MIGP_RegArea_Read:: pstCommHandle is NULL");
 		return FALSE;
 	}
 
@@ -756,15 +717,12 @@ BOOL MIGP_RegArea_Read_NoRequest(void *pstCommHandle, AREA_TYPE enAreaType,
 	{
 		return FALSE;
 	}
-	
  
 	if(MIGP_Receive_Frame(pstCommHandle, iTimeOut, ulLength + 16, bCmd, pbRxData) == FALSE)
 	{
-//		printf_debug("MIGP_RegArea_Read_NoRequest:: MIGP_Receive_Frame is FALSE");
 		return FALSE;
 	}
 
-	
 	return TRUE;
 }
 

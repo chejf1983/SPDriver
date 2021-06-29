@@ -124,42 +124,43 @@ typedef struct
 	int iAverageTimes;//平均次数
 	int iTriggerDelay;//触发延时
 	
-    int iStartWavelength; //起始波长
-    int iEndWavelength;	  //截至波长
-    int iMinIntegrationTimeUS;//最小积分时间
-    int iMaxIntegrationTimeUS;//最大积分时间
-    int iPixelNumber;//像素点个数
+	int iStartWavelength; //起始波长
+	int iEndWavelength;	  //截至波长
+	int iMinIntegrationTimeUS;//最小积分时间
+	int iMaxIntegrationTimeUS;//最大积分时间
+	int iPixelNumber;//像素点个数
 	int iAverageWidth;//滤波宽度
-	int iPixelType; //像素数据类型
-	
-    double adWavelengthCalib[4];//定标系数
-    char cNonlinearCalibType;//非线性定标类型
-    int iNonlinearCalibLength;//分显性定标长度
-    float fNonlinearCalibPixelOrWL[8];
-    int iNonlinearCalibCoNumber[8];
-    float afNonlinearCalibAD[8][10];
-    float afNonlinearCalibCo[8][10];
+	int iPixelType; //像素数据类型 新板子为1
+	int iPosType; //像素数据类型 像素点后为1
+
+	double adWavelengthCalib[4];//定标系数
+	char   cNonlinearCalibType;//非线性定标类型
+	int    iNonlinearCalibLength;//分显性定标长度
+	float  fNonlinearCalibPixelOrWL[8];
+	int    iNonlinearCalibCoNumber[8];
+	float  afNonlinearCalibAD[8][10];
+	float  afNonlinearCalibCo[8][10];
 }SP_PARA_ST;
 
 //EIA信息
 typedef struct
 {
 	char aucEquipmentInfo[17]; //设备名称
-    char ucHardWareVersion;    //硬件版本
-    char aucSoftWareVersion[5];//软件版本
-    char aucSerialNumber[17];  //序列号
-    char aucManufacturingDate[17];//生产日期
+	char ucHardWareVersion;    //硬件版本
+	char aucSoftWareVersion[5];//软件版本
+	char aucSerialNumber[17];  //序列号
+	char aucManufacturingDate[17];//生产日期
 }EIA_ST;
 
 //通信结构
 typedef struct
 {
-	COMM_TYPE enCommType;   //通信类型
-    MIGP_ST stMIGP;         //MIPG协议信息
-	COM_PARA_ST stComPara;  //串口信息
-	NET_PARA_ST stNetPara;  //TCP信息
-	SP_PARA_ST stSpectrometerPara;  //光谱仪参数
-    EIA_ST stEIA;           //设备信息
+	COMM_TYPE	  enCommType;	//通信类型
+	MIGP_ST	  stMIGP;		//MIPG协议信息
+	COM_PARA_ST stComPara;	//串口信息
+	NET_PARA_ST stNetPara;	//TCP信息
+	SP_PARA_ST  stSpectrometerPara;  //光谱仪参数
+	EIA_ST      stEIA;		//设备信息
 }COMM_PARA_ST;
 
 typedef union
@@ -232,7 +233,8 @@ typedef union
 
 #define NVPA_OUTPUT_ADDR                  14
 
-#define NVPA_PIXELS_TYPE_ADDR             16
+#define NVPA_PIXELS_TYPE_ADDR             16 //新板子老板子
+#define NVPA_PIXELS_POS_ADDR	            17 //新板子正反
 
 
 
@@ -247,16 +249,6 @@ typedef union
 #define    AS_DLL_PRINTF_DEBUG_ON     0x00000001
 
 extern WORD PrintfDebugSwitch;
-
-#define printf_debug(string)                        \
-{                                                \
-if(PrintfDebugSwitch == AS_DLL_PRINTF_DEBUG_ON)  \
-{                                              \
-printf("AS_DLL_ERROR_LOG:");                   \
-printf(string);                            \
-printf("\r\n");                            \
-}                                             \
-}  
 
 
 void MIGP_RevBuff_Init(MIGP_ST *pstMIGPCom);
