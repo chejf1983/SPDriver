@@ -181,7 +181,7 @@ void GetSpectum(){
 	double data[3000];
 	int spec_num;	 
 	//同步采样
-	if(SA_GetSpectum(open_dev, data, &spec_num) == 0)
+	if(SA_GetSpectum(open_dev, data, spec_num) == 0)
 	{		
 		double TotTime = StopTime();
 
@@ -230,7 +230,7 @@ void ScanStartAsyncSoftTrigger()
 	int spec_num;
 	StartTime();
 	//取光谱
-	if(SA_GetSpectum(open_dev, data, &spec_num) == 0)
+	if(SA_GetSpectum(open_dev, data, spec_num) == 0)
 	{
 		double TotTime = StopTime();
 
