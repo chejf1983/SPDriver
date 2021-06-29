@@ -9,6 +9,7 @@
 #include "spectraltest.h"
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 
 using namespace std; 
@@ -92,6 +93,8 @@ void input_cmd(int cmd_num)
 
 int main(int argc, char *argv[])
 {
+	cout<<log(3.1/2)<<endl;
+	initDll();
 	while(last_cmd_num >= 0)
 	{		
 		print_info();			

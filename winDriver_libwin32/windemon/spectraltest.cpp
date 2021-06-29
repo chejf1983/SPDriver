@@ -1,6 +1,7 @@
 
 #include "stdafx.h"
 #include "SpectraArsenal.h"
+//#include "SpectraArsenalII.h"
 #include "stdio.h"
 #include <iostream>
 #include <vector>
@@ -10,6 +11,44 @@
 
 #pragma comment(lib, "SpectraArsenal.lib")
 using namespace std; 
+
+/*
+pSA_GetAPIVersion SA_GetAPIVersion;
+pSA_OpenSpectrometers SA_OpenSpectrometers;
+pSA_GetSpectrometersName SA_GetSpectrometersName;
+pSA_SetIntegrationTime SA_SetIntegrationTime;
+pSA_SetSpectumTriggerMode SA_SetSpectumTriggerMode;
+pSA_GetSpectum SA_GetSpectum;
+pSA_ScanStartAsyncSoftTrigger SA_ScanStartAsyncSoftTrigger;
+pSA_GetStateAsyncSoftTrigger SA_GetStateAsyncSoftTrigger;
+pSA_GetAsyncSoftSpectum SA_GetAsyncSoftSpectum;
+pSA_SetMultiChannelIntegrationTime SA_SetMultiChannelIntegrationTime;
+pSA_ScanStartMultiChannelAsyncSoftTrigger SA_ScanStartMultiChannelAsyncSoftTrigger;
+pSA_GetMultiChannelAsyncSoftSpectum SA_GetMultiChannelAsyncSoftSpectum;
+pSA_CloseSpectrometers SA_CloseSpectrometers;
+pSA_GetSpectrometerPixelsNumber SA_GetSpectrometerPixelsNumber;
+*/
+
+void initDll()
+{
+	/*
+	HMODULE hModule = LoadLibrary("SpectraArsenal.dll");
+	SA_GetAPIVersion = (pSA_GetAPIVersion)GetProcAddress(hModule, "SA_GetAPIVersion");
+	SA_OpenSpectrometers = (pSA_OpenSpectrometers)GetProcAddress(hModule, "SA_OpenSpectrometers");
+	SA_GetSpectrometersName = (pSA_GetSpectrometersName)GetProcAddress(hModule, "SA_GetSpectrometersName");
+	SA_SetIntegrationTime = (pSA_SetIntegrationTime)GetProcAddress(hModule, "SA_SetIntegrationTime");
+	SA_SetSpectumTriggerMode = (pSA_SetSpectumTriggerMode)GetProcAddress(hModule, "SA_SetSpectumTriggerMode");
+	SA_GetSpectum = (pSA_GetSpectum)GetProcAddress(hModule, "SA_GetSpectum");
+	SA_ScanStartAsyncSoftTrigger = (pSA_ScanStartAsyncSoftTrigger)GetProcAddress(hModule, "SA_ScanStartAsyncSoftTrigger");
+	SA_GetStateAsyncSoftTrigger = (pSA_GetStateAsyncSoftTrigger)GetProcAddress(hModule, "SA_GetStateAsyncSoftTrigger");
+	SA_GetAsyncSoftSpectum = (pSA_GetAsyncSoftSpectum)GetProcAddress(hModule, "SA_GetAsyncSoftSpectum");
+	SA_SetMultiChannelIntegrationTime = (pSA_SetMultiChannelIntegrationTime)GetProcAddress(hModule, "SA_SetMultiChannelIntegrationTime");
+	SA_ScanStartMultiChannelAsyncSoftTrigger = (pSA_ScanStartMultiChannelAsyncSoftTrigger)GetProcAddress(hModule, "SA_ScanStartMultiChannelAsyncSoftTrigger");
+	SA_GetMultiChannelAsyncSoftSpectum = (pSA_GetMultiChannelAsyncSoftSpectum)GetProcAddress(hModule, "SA_GetMultiChannelAsyncSoftSpectum");
+	SA_CloseSpectrometers = (pSA_CloseSpectrometers)GetProcAddress(hModule, "SA_CloseSpectrometers");
+	SA_GetSpectrometerPixelsNumber = (pSA_GetSpectrometerPixelsNumber)GetProcAddress(hModule, "SA_GetSpectrometerPixelsNumber");*/
+	
+}
 
 int open_dev = -1;
 //*************************************************************
@@ -64,10 +103,12 @@ void GetSpectrometersName()
 	char * dev_name = SA_GetSpectrometersName(open_dev);
 	if(dev_name != NULL)
 	{
-		cout<<dev_name<<endl;
+		cout<<dev_name<<"点个数"<<SA_GetSpectrometerPixelsNumber(open_dev)<<endl;
 	}else{
 		cout<<"读取设备名称失败"<<endl;
 	}
+
+	
 }
 
 //设置积分时间
@@ -118,7 +159,7 @@ void GetSpectum(){
 	if(SA_GetSpectum(open_dev, data, spec_num) == 0)
 	{		
 		//输出信息
-		cout<<"获取设备:1获得数据"<<spec_num<<"个，时间:"<<ClickTime()<<endl;
+		cout<<"获取设备:1获得数据"<<data[spec_num-1]<<"个，时间:"<<ClickTime()<<endl;
 		//打印曲线
 		print_chart(data, spec_num);
 	}else{

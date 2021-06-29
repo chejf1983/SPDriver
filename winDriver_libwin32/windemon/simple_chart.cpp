@@ -1,8 +1,8 @@
-#include <iostream>
+
 #include "stdio.h"
 #include <stdlib.h>
 #include "stdafx.h"
-
+#include <iostream>
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
 const int row_max = 15;//表格最大行数
 const int column_max = 70;//表格最大列数
@@ -45,7 +45,7 @@ void convert_data(double ora_x[], double ora_y[], int ora_len, double x[], int y
 	double max = 0;
 	for(i = 0; i < ora_len; i++){
 		if(ora_y[i] > max) max = ora_y[i];
-		if(ora_y[i] < min) min = ora_y[i];
+		if(ora_y[i] < min){ min = ora_y[i];};
 	}
 	//计算y间隔 
 	max += max * 0.1;

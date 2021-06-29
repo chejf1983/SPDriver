@@ -1,4 +1,4 @@
-
+void initDll();
 void GetAPIVersion();
 void OpenSpectrometers();
 void GetSpectrometersName();
