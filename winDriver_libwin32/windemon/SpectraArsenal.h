@@ -58,16 +58,16 @@ typedef struct
 #endif
 
 /* 光谱仪设备操作接口 */
-SPECTRAARSENAL_API char* SA_GetAPIVersion(void);
-SPECTRAARSENAL_API int SA_OpenSpectrometers(void);
-SPECTRAARSENAL_API int SA_OpenSpectrometersForSerial(void);
-SPECTRAARSENAL_API int SA_OpenSpectrometersSimplifyForSerial(int iComID);
-SPECTRAARSENAL_API void SA_CloseSpectrometers(void);
+SPECTRAARSENAL_API char* SA_GetAPIVersion(void);//获取API版本
+SPECTRAARSENAL_API int SA_OpenSpectrometers(void);//打开光谱仪，返回找到的光谱仪个数，从0开始
+SPECTRAARSENAL_API int SA_OpenSpectrometersForSerial(void);//打开串口连接的光谱仪
+SPECTRAARSENAL_API int SA_OpenSpectrometersSimplifyForSerial(int iComID);//根据COMID打开串口光谱仪
+SPECTRAARSENAL_API void SA_CloseSpectrometers(void);//关闭光谱仪
 
 /* 光谱仪参数设置操作接口 */
-SPECTRAARSENAL_API int SA_SetPosType(int spectrometerIndex, int iPos);
+SPECTRAARSENAL_API int SA_SetPosType(int spectrometerIndex, int iPos);//光谱镜像反转设置 int spectrometerIndex表示搜索到的第几台光谱仪，从0开始
 
-SPECTRAARSENAL_API int SA_SetSpectumTriggerMode(int spectrometerIndex, TRIGGER_MODE TriggerMode);
+SPECTRAARSENAL_API int SA_SetSpectumTriggerMode(int spectrometerIndex, TRIGGER_MODE TriggerMode);//设置触发模式
 SPECTRAARSENAL_API int SA_SetIntegrationTime (int spectrometerIndex, int usec);
 SPECTRAARSENAL_API int SA_SetAverageTimes(int spectrometerIndex, int AverageTimes);
 
@@ -101,11 +101,13 @@ SPECTRAARSENAL_API char * SA_GetManufacturingDate(int spectrometerIndex);
 /* 光谱数据处理相关接口 */
 SPECTRAARSENAL_API int SA_OpenModSpec(BOOL bOpen,int iNum, float fValue);
 SPECTRAARSENAL_API int SA_UseFFTFilter(BOOL bUseFFT,float fValue);
+SPECTRAARSENAL_API int SA_SetWindow(int window);
 
 /*********************************软件单通道触发相关操作***********************************************/
 
 /* 单通道软件同步操作--获取光谱 */
 SPECTRAARSENAL_API int SA_GetSpectum(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber);
+SPECTRAARSENAL_API int SA_GetSpectumN(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber);
 
 /* 单通道软件异步操作--异步触发、状态查询、获取光谱*/
 SPECTRAARSENAL_API int SA_ScanStartAsyncSoftTrigger(int spectrometerIndex);
@@ -150,10 +152,6 @@ SPECTRAARSENAL_API int SA_StartFETrigger(int spectrometerIndex);
 SPECTRAARSENAL_API int SA_GetSpectumFETrigger(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber);
 
 
-
-
-
-
 /* RGB上升沿触发启动操作接口 */
 SPECTRAARSENAL_API int SA_SetRGBModeIntegrationTime (int spectrometerIndex, int *usec, int usec_num);
 SPECTRAARSENAL_API int SA_StartRBGModeRETrigger(int spectrometerIndex);
@@ -163,23 +161,14 @@ SPECTRAARSENAL_API int SA_GetSpectumRBGModeRETrigger(int spectrometerIndex, doub
 SPECTRAARSENAL_API int SA_StartRBGModeFETrigger(int spectrometerIndex);
 SPECTRAARSENAL_API int SA_GetSpectumRBGModeFETrigger(int spectrometerIndex, double *pdSpectumData, int &pSpectumNumber, int iChannelNum);
 
-
-
-
-
-
 /* 自动积分时间相关操作接口 */
 SPECTRAARSENAL_API int SA_GetSpectumAutoIntegrationTime(int spectrometerIndex, double *pdSpectumData, int *pSpectumNumber, int usec);
-
-
 
 /* 脉冲氙灯相关操作接口 */
 SPECTRAARSENAL_API int SA_SetXenonFlashPara(int spectrometerIndex, int iPulseWidth, int IntervalTime, int iDelayTime, int PulseNumber);
 SPECTRAARSENAL_API int SA_GetXenonFlashPara(int spectrometerIndex, int *iPulseWidth, int *IntervalTime, int *iDelayTime, int *PulseNumber);
 SPECTRAARSENAL_API int SA_XenonFlashDisable(int spectrometerIndex);
 SPECTRAARSENAL_API int SA_XenonFlashEnable(int spectrometerIndex);
-
-
 
 /* 用户存储操作接口 */
 SPECTRAARSENAL_API int SA_WriteUserMemory(int spectrometerIndex, int Address, int length, BYTE * UserData);

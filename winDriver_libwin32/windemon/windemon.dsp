@@ -122,6 +122,10 @@ SOURCE=.\SpectraArsenal.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\SpectraArsenalII.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\spectraltest.h
 # End Source File
 # Begin Source File

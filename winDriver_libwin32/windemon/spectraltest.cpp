@@ -159,7 +159,7 @@ void GetSpectum(){
 	if(SA_GetSpectum(open_dev, data, spec_num) == 0)
 	{		
 		//输出信息
-		cout<<"获取设备:1获得数据"<<data[spec_num-1]<<"个，时间:"<<ClickTime()<<endl;
+		cout<<"获取设备:1获得数据"<<spec_num<<"个，时间:"<<ClickTime()<<endl;
 		//打印曲线
 		print_chart(data, spec_num);
 	}else{
